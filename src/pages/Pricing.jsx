@@ -14,7 +14,7 @@ export default function Pricing() {
     <>
       <Seo
         title="Polytank Cleaning Prices in Accra | Linfi Polyclean"
-        description={`Polytank cleaning in Accra from ${lowest} per tank. See base prices by tank size, from 500L to 10,000L, and book with Linfi Polyclean.`}
+        description={`Polytank cleaning in Accra from ${lowest} per tank. See base prices by tank size, from 500L to 10,000L and above, and book with Linfi Polyclean.`}
         path="/pricing"
       />
       <PageHero

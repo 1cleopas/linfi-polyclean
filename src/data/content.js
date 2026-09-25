@@ -15,8 +15,8 @@ export const company = {
   tagline: 'Clean Tank · Safe Life',
   phone: '[ADD PHONE NUMBER]',
   phoneHref: 'tel:+233000000000',
-  whatsapp: '[ADD WHATSAPP NUMBER]',
-  whatsappDigits: '233000000000',
+  whatsapp: '024 191 5966',
+  whatsappDigits: '233241915966',
   email: '[ADD EMAIL]',
   hours: '[ADD HOURS]',
   serviceArea: 'Accra, Ghana',
@@ -146,13 +146,18 @@ export const tankTypes = [
 ]
 
 export const tankSizes = [
-  '500 Litres',
-  '1,000 Litres',
-  '1,500 Litres',
-  '2,000 Litres',
-  '2,500 Litres',
-  '5,000 Litres',
-  'Other',
+  '1L – 500L',
+  '501L – 1,500L',
+  '1,501L – 2,500L',
+  '2,501L – 3,500L',
+  '3,501L – 4,500L',
+  '4,501L – 5,500L',
+  '5,501L – 6,500L',
+  '6,501L – 7,500L',
+  '7,501L – 8,500L',
+  '8,501L – 9,500L',
+  '10,000L and above',
+  'Not sure',
 ]
 
 export const whyChoose = [
@@ -256,12 +261,14 @@ export const basePrices = [
   { range: '1L – 500L', price: 300 },
   { range: '501L – 1,500L', price: 350 },
   { range: '1,501L – 2,500L', price: 400 },
-  { range: '2,501L – 4,000L', price: 450 },
-  { range: '4,001L – 5,500L', price: 550 },
-  { range: '5,501L – 6,500L', price: 600 },
-  { range: '6,501L – 7,500L', price: 650 },
-  { range: '7,501L – 8,500L', price: 700 },
-  { range: '8,501L – 10,000L', price: 900 },
+  { range: '2,501L – 3,500L', price: 450 },
+  { range: '3,501L – 4,500L', price: 550 },
+  { range: '4,501L – 5,500L', price: 600 },
+  { range: '5,501L – 6,500L', price: 650 },
+  { range: '6,501L – 7,500L', price: 700 },
+  { range: '7,501L – 8,500L', price: 750 },
+  { range: '8,501L – 9,500L', price: 800 },
+  { range: '10,000L and above', price: 900 },
 ]
 
 export const pricingNotes = {
@@ -325,7 +332,7 @@ export const faqs = [
   },
   {
     q: 'How much does polytank cleaning cost?',
-    a: 'Base prices are per tank and depend on tank size: from GH₵300 for tanks up to 500 litres, up to GH₵900 for tanks of 8,501 to 10,000 litres. An additional GH₵50 applies to tanks above 2-storey buildings, and prices may vary due to location and tank position. See the full price list on our Pricing section or book a cleaning.',
+    a: 'Base prices are per tank and depend on tank size: from GH₵300 for tanks up to 500 litres, up to GH₵900 for tanks of 10,000 litres and above. An additional GH₵50 applies to tanks above 2-storey buildings, and prices may vary due to location and tank position. See the full price list on our Pricing section or book a cleaning.',
   },
   {
     q: 'Which areas in Accra do you cover?',
