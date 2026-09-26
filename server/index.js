@@ -33,6 +33,7 @@ app.post('/api/bookings', (req, res) => {
 
   try {
     const job = createJob({ ...body, source: 'website', status: 'new' })
+    console.log(`Booking saved: ${job.fullName} (${job.week})`)
     res.status(201).json({
       job,
       weekCount: countWeekBookings(job.week),

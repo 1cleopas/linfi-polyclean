@@ -76,6 +76,7 @@ export default function BookingForm() {
   const [copied, setCopied] = useState(false)
   const [whatsappLink, setWhatsappLink] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
   const workWeeks = useMemo(() => upcomingWorkWeeks(8), [])
 
   useEffect(() => {
@@ -101,14 +102,26 @@ export default function BookingForm() {
     if (Object.keys(next).length !== 0) return
 
     setSaving(true)
+    setSaveError('')
     try {
-      await createBooking(values)
+      await createBooking({
+        fullName: values.fullName,
+        phone: values.phone,
+        whatsapp: values.whatsapp,
+        location: values.location,
+        service: values.service,
+        tankType: values.tankType,
+        tankSize: values.tankSize,
+        tanks: values.tanks,
+        week: values.week,
+        time: values.time,
+        extra: values.extra,
+      })
     } catch (err) {
-      if (err.status === 409 || err.status === 400) {
-        setErrors((prev) => ({ ...prev, week: err.message }))
-        setSaving(false)
-        return
-      }
+      setErrors((prev) => ({ ...prev, week: err.message }))
+      setSaveError(err.message || 'The booking could not be saved. Please try again.')
+      setSaving(false)
+      return
     }
 
     const message = bookingMessage(values)
@@ -129,10 +142,10 @@ export default function BookingForm() {
         <CircleCheckBig className="mx-auto h-14 w-14 text-green" aria-hidden="true" />
         <h3 className="font-headline mt-4 text-2xl font-bold text-primary">Request received</h3>
         <p className="mx-auto mt-3 max-w-lg text-muted">
-          Thank you, {values.fullName.split(' ')[0] || 'there'}. Your polytank cleaning request is ready.
+          Thank you, {values.fullName.split(' ')[0] || 'there'}. Your booking has been saved for our team.
           {hasWhatsApp()
-            ? ' If WhatsApp did not open, use the button below to send the details.'
-            : ' Copy the request below and send it to LINFI POLYCLEAN when contact details are added.'}
+            ? ' If WhatsApp did not open, use the button below to send the same details.'
+            : ' Copy the request below and send it to LINFI POLYCLEAN.'}
         </p>
         {whatsappLink && (
           <Button href={whatsappLink} variant="whatsapp" className="mt-8">
@@ -259,6 +272,7 @@ export default function BookingForm() {
         <p className="text-sm font-medium text-secondary md:col-span-2">Selected service: {values.service}</p>
       )}
       <div className="md:col-span-2">
+        {saveError && <p className="mb-3 text-center text-sm font-medium normal-case text-red-600">{saveError}</p>}
         <Button type="submit" fullWidth className="rounded-xl py-4" disabled={saving}>
           {saving ? 'Saving booking…' : 'Book a Cleaning'}
         </Button>

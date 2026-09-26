@@ -78,17 +78,30 @@ export default function Admin() {
 
   useEffect(() => {
     if (!tokenReady) return undefined
-    setLoading(true)
-    refresh()
-      .catch((err) => {
-        if (err.status === 401) {
-          setAdminToken('')
-          setTokenReady(false)
-        }
-        setError(err.message)
-      })
-      .finally(() => setLoading(false))
-    return undefined
+
+    let cancelled = false
+    const load = (showSpinner = false) => {
+      if (showSpinner) setLoading(true)
+      return refresh()
+        .catch((err) => {
+          if (cancelled) return
+          if (err.status === 401) {
+            setAdminToken('')
+            setTokenReady(false)
+          }
+          setError(err.message)
+        })
+        .finally(() => {
+          if (!cancelled && showSpinner) setLoading(false)
+        })
+    }
+
+    load(true)
+    const timer = window.setInterval(() => load(false), 8000)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
   }, [tokenReady])
 
   const thisMonth = monthKey(new Date())
