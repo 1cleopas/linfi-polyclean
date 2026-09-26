@@ -16,7 +16,7 @@ export default function Hero() {
       <div className="absolute inset-0 z-0">
         <img
           src={images.hero}
-          alt="Ghanaian technician professionally cleaning a blue rooftop polytank water storage tank in Accra"
+          alt="Ghanaian technician wearing a face mask while professionally cleaning a polytank water storage tank in Accra"
           className="h-full w-full object-cover object-[center_30%]"
           fetchPriority="high"
         />

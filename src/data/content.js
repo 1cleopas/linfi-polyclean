@@ -13,11 +13,11 @@ export const company = {
   name: 'LINFI POLYCLEAN',
   shortName: 'Linfi Polyclean',
   tagline: 'Clean Tank · Safe Life',
-  phone: '[ADD PHONE NUMBER]',
-  phoneHref: 'tel:+233000000000',
+  phone: '024 191 5966',
+  phoneHref: 'tel:+233241915966',
   whatsapp: '024 191 5966',
   whatsappDigits: '233241915966',
-  email: '[ADD EMAIL]',
+  email: 'linfipolyclean@gmail.com',
   hours: '[ADD HOURS]',
   serviceArea: 'Accra, Ghana',
   location: 'Accra, Ghana',
@@ -100,11 +100,11 @@ export const services = [
   {
     id: 'residential',
     icon: 'home',
-    name: 'Residential Tank Cleaning',
-    short: 'Services for homes, apartments, compounds, and residential properties.',
+    name: 'Residential, Apartment & Estate Tank Cleaning',
+    short: 'Homes, apartments, compounds, estates, and properties with shared water storage systems.',
     description:
-      'Household and compound polytank cleaning for homes, apartments and residential properties across Accra, scheduled around your day.',
-    quoteValue: 'Residential Tank Cleaning',
+      'Polytank cleaning for homes, apartments, compounds, estates and properties with shared water storage systems across Accra. We can schedule around your day and plan sequential cleaning so disruption stays practical.',
+    quoteValue: 'Residential, Apartment & Estate Tank Cleaning',
   },
   {
     id: 'commercial',
@@ -114,24 +114,6 @@ export const services = [
     description:
       'Tank cleaning for offices, shops, hotels, restaurants, schools and other businesses, with scheduling that respects your operating hours.',
     quoteValue: 'Commercial Tank Cleaning',
-  },
-  {
-    id: 'estate',
-    icon: 'buildings',
-    name: 'Apartment & Estate Tank Cleaning',
-    short: 'Suitable for apartment buildings, estates, and properties with shared water storage systems.',
-    description:
-      'Cleaning for apartment buildings, estates and properties with shared water storage systems. We can plan sequential cleaning so disruption is kept practical.',
-    quoteValue: 'Apartment & Estate Tank Cleaning',
-  },
-  {
-    id: 'inspection',
-    icon: 'search',
-    name: 'Tank Inspection',
-    short: 'Basic visual inspection of the tank and identification of visible dirt, sediment, buildup, or maintenance concerns.',
-    description:
-      'A basic visual inspection of the tank to identify visible dirt, sediment, buildup or maintenance concerns, so you know what the cleaning should address.',
-    quoteValue: 'Tank Inspection',
   },
 ]
 
@@ -179,7 +161,7 @@ export const whyChoose = [
   {
     icon: 'calendar',
     title: 'Convenient scheduling',
-    text: 'Choose a preferred date and time that works for your home or business.',
+    text: 'Choose a preferred week that works for your home or business. We work Tuesday to Sunday and take up to 30 bookings each week.',
   },
   {
     icon: 'home',
@@ -212,7 +194,7 @@ export const steps = [
   {
     step: '02',
     title: 'Tell Us About Your Tank',
-    text: 'Provide the tank size, location, and preferred cleaning date.',
+    text: 'Provide the tank size, location, and preferred cleaning week.',
   },
   {
     step: '03',
@@ -256,29 +238,6 @@ export const testimonials = [
     rating: 5,
   },
 ]
-
-export const basePrices = [
-  { range: '1L – 500L', price: 300 },
-  { range: '501L – 1,500L', price: 350 },
-  { range: '1,501L – 2,500L', price: 400 },
-  { range: '2,501L – 3,500L', price: 450 },
-  { range: '3,501L – 4,500L', price: 550 },
-  { range: '4,501L – 5,500L', price: 600 },
-  { range: '5,501L – 6,500L', price: 650 },
-  { range: '6,501L – 7,500L', price: 700 },
-  { range: '7,501L – 8,500L', price: 750 },
-  { range: '8,501L – 9,500L', price: 800 },
-  { range: '10,000L and above', price: 900 },
-]
-
-export const pricingNotes = {
-  variance: 'Prices may vary due to location and tank position.',
-  storeySurcharge: 'An additional GH₵50 is added for tanks above 2-storey buildings.',
-}
-
-export function formatCedis(amount) {
-  return `GH₵${amount.toLocaleString('en-GH')}`
-}
 
 export const pricingFactors = [
   'Tank size',
@@ -332,7 +291,7 @@ export const faqs = [
   },
   {
     q: 'How much does polytank cleaning cost?',
-    a: 'Base prices are per tank and depend on tank size: from GH₵300 for tanks up to 500 litres, up to GH₵900 for tanks of 10,000 litres and above. An additional GH₵50 applies to tanks above 2-storey buildings, and prices may vary due to location and tank position. See the full price list on our Pricing section or book a cleaning.',
+    a: 'Pricing depends on tank size, number of tanks, accessibility, location, the level of dirt or buildup, and the type of service required. Book a cleaning or WhatsApp us with those details and we will confirm the price — we do not publish a single flat rate because jobs vary.',
   },
   {
     q: 'Which areas in Accra do you cover?',

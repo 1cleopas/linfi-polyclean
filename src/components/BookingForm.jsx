@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { CircleCheckBig } from 'lucide-react'
 import { hasWhatsApp, tankSizes, tankTypes, tryOpenWhatsApp } from '../data/content'
+import { upcomingWorkWeeks, WEEKLY_BOOKING_LIMIT, WORK_DAYS } from '../lib/weeks'
+import { createBooking } from '../lib/api'
 import { useQuote } from '../context/QuoteContext'
 import Button from './Button'
 
@@ -12,20 +14,13 @@ const empty = {
   tankType: '',
   tankSize: '',
   tanks: '',
-  date: '',
+  week: '',
   time: '',
   extra: '',
   service: '',
 }
 
 const AUTO_PREFIX = 'I would like: '
-
-function todayLocal() {
-  const d = new Date()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${d.getFullYear()}-${month}-${day}`
-}
 
 function withDefaults(service) {
   return {
@@ -40,6 +35,7 @@ function validate(values) {
   if (!values.fullName.trim() || values.fullName.trim().length < 2) errors.fullName = 'Please enter your full name.'
   if (!values.phone.trim() || values.phone.trim().length < 8) errors.phone = 'Enter a valid phone number.'
   if (!values.location.trim()) errors.location = 'Tell us your location in Accra.'
+  if (!values.week) errors.week = 'Choose a preferred week.'
   return errors
 }
 
@@ -55,7 +51,7 @@ function bookingMessage(values) {
     values.tankType ? `Tank type: ${values.tankType}` : '',
     values.tankSize ? `Tank size: ${values.tankSize}` : '',
     values.tanks ? `Number of tanks: ${values.tanks}` : '',
-    values.date ? `Preferred date: ${values.date}` : '',
+    values.week ? `Preferred week: ${values.week} (working days ${WORK_DAYS}, up to ${WEEKLY_BOOKING_LIMIT} bookings)` : '',
     values.time ? `Preferred time: ${values.time}` : '',
     values.extra ? `Additional information: ${values.extra}` : '',
   ]
@@ -79,7 +75,8 @@ export default function BookingForm() {
   const [success, setSuccess] = useState(false)
   const [copied, setCopied] = useState(false)
   const [whatsappLink, setWhatsappLink] = useState(null)
-  const minDate = useMemo(() => todayLocal(), [])
+  const [saving, setSaving] = useState(false)
+  const workWeeks = useMemo(() => upcomingWorkWeeks(8), [])
 
   useEffect(() => {
     setValues((prev) => {
@@ -97,17 +94,29 @@ export default function BookingForm() {
     setValues((prev) => ({ ...prev, [name]: value }))
   }
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault()
     const next = validate(values)
     setErrors(next)
-    if (Object.keys(next).length === 0) {
-      const message = bookingMessage(values)
-      const result = tryOpenWhatsApp(message)
-      setWhatsappLink(result.url)
-      setCopied(false)
-      setSuccess(true)
+    if (Object.keys(next).length !== 0) return
+
+    setSaving(true)
+    try {
+      await createBooking(values)
+    } catch (err) {
+      if (err.status === 409 || err.status === 400) {
+        setErrors((prev) => ({ ...prev, week: err.message }))
+        setSaving(false)
+        return
+      }
     }
+
+    const message = bookingMessage(values)
+    const result = tryOpenWhatsApp(message)
+    setWhatsappLink(result.url)
+    setCopied(false)
+    setSuccess(true)
+    setSaving(false)
   }
 
   const fieldClass =
@@ -211,8 +220,19 @@ export default function BookingForm() {
         <input className={fieldClass} name="tanks" value={values.tanks} onChange={onChange} inputMode="numeric" placeholder="e.g. 1" />
       </label>
       <label className="flex flex-col gap-1.5 text-xs font-semibold tracking-wide text-muted uppercase">
-        Preferred Date
-        <input className={fieldClass} type="date" name="date" value={values.date} min={minDate} onChange={onChange} />
+        Preferred Week *
+        <select className={fieldClass} name="week" value={values.week} onChange={onChange}>
+          <option value="">Select a week</option>
+          {workWeeks.map((week) => (
+            <option key={week.value} value={week.label}>
+              {week.label}
+            </option>
+          ))}
+        </select>
+        {errors.week && <span className="font-medium normal-case text-red-600">{errors.week}</span>}
+        <span className="font-medium normal-case text-muted">
+          We take up to {WEEKLY_BOOKING_LIMIT} bookings each week. Working days are {WORK_DAYS} (Monday off).
+        </span>
       </label>
       <label className="flex flex-col gap-1.5 text-xs font-semibold tracking-wide text-muted uppercase">
         Preferred Time
@@ -222,6 +242,7 @@ export default function BookingForm() {
           <option>Afternoon (12pm – 4pm)</option>
           <option>Evening (4pm – 6pm)</option>
         </select>
+        <span className="font-medium normal-case text-muted">We will confirm a day in your chosen week.</span>
       </label>
       <label className="flex flex-col gap-1.5 text-xs font-semibold tracking-wide text-muted uppercase md:col-span-2">
         Additional Information
@@ -238,8 +259,8 @@ export default function BookingForm() {
         <p className="text-sm font-medium text-secondary md:col-span-2">Selected service: {values.service}</p>
       )}
       <div className="md:col-span-2">
-        <Button type="submit" fullWidth className="rounded-xl py-4">
-          Book a Cleaning
+        <Button type="submit" fullWidth className="rounded-xl py-4" disabled={saving}>
+          {saving ? 'Saving booking…' : 'Book a Cleaning'}
         </Button>
         <p className="mt-3 text-center text-xs text-muted">
           {hasWhatsApp()

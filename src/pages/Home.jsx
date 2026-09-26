@@ -1,14 +1,4 @@
-import {
-  accraAreas,
-  basePrices,
-  company,
-  formatCedis,
-  images,
-  mapEmbedSrc,
-  pricingFactors,
-  testimonials,
-} from '../data/content'
-import PriceTable from '../components/PriceTable'
+import { accraAreas, company, images, mapEmbedSrc, pricingFactors, testimonials } from '../data/content'
 import Hero from '../components/Hero'
 import ProblemAwareness from '../components/ProblemAwareness'
 import { ServicesGrid } from '../components/ServiceCard'
@@ -23,7 +13,6 @@ import SectionHeader from '../components/SectionHeader'
 import BookingForm from '../components/BookingForm'
 import ContactForm from '../components/ContactForm'
 import ContactDetails from '../components/ContactDetails'
-import BeforeAfter from '../components/BeforeAfter'
 import Button from '../components/Button'
 import { useQuote } from '../context/QuoteContext'
 
@@ -39,21 +28,6 @@ export default function Home() {
         <ServicesGrid />
         <HowItWorks />
         <WhyChooseUs />
-
-        <section className="px-4 md:px-10" id="see-the-difference">
-          <div className="mx-auto max-w-[1200px]">
-            <SectionHeader
-              title="See The Difference"
-              subtitle="A dirty tank with visible sediment and buildup, compared with a professionally cleaned tank."
-            />
-            <div className="mx-auto max-w-3xl">
-              <BeforeAfter />
-              <p className="mt-3 text-center text-xs text-muted">
-                Images are representative examples where actual customer photos are not available.
-              </p>
-            </div>
-          </div>
-        </section>
 
         <section className="scroll-mt-28 px-4 md:px-10" id="booking">
           <div className="mx-auto max-w-[1200px] rounded-3xl border border-outline/20 bg-white p-8 shadow-[var(--shadow-card)] md:p-12">
@@ -75,14 +49,12 @@ export default function Home() {
           <div className="mx-auto max-w-[1200px] rounded-3xl bg-primary p-8 text-white md:p-12">
             <div className="grid items-center gap-10 lg:grid-cols-2">
               <div>
-                <p className="text-xs font-bold tracking-[0.2em] text-aqua uppercase">Base prices per tank</p>
+                <p className="text-xs font-bold tracking-[0.2em] text-aqua uppercase">Pricing</p>
                 <h2 className="font-headline mt-3 text-[28px] font-bold md:text-[32px]">
                   How Much Does Polytank Cleaning Cost?
                 </h2>
                 <p className="mt-4 text-white/80">
-                  Clear, per-tank pricing based on tank size — from{' '}
-                  <span className="font-semibold text-white">{formatCedis(basePrices[0].price)}</span> for tanks up to
-                  500 litres. Final prices may vary with location and tank position.
+                  We confirm the price when you book. Every job is different, and the final amount can depend on:
                 </p>
                 <ul className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {pricingFactors.map((item) => (
@@ -96,7 +68,16 @@ export default function Home() {
                   Book a Cleaning
                 </Button>
               </div>
-              <PriceTable />
+              <div className="rounded-2xl bg-white p-8 text-center text-primary">
+                <p className="text-sm font-semibold tracking-wide text-secondary uppercase">Tell us about your tank</p>
+                <p className="font-headline mt-2 text-2xl font-bold">Share size, location and access</p>
+                <p className="mt-3 text-sm text-muted">
+                  We will confirm availability and your price before the visit.
+                </p>
+                <Button className="mt-6" onClick={() => openQuote()}>
+                  Book a Cleaning
+                </Button>
+              </div>
             </div>
           </div>
         </section>

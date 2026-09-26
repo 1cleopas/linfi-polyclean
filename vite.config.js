@@ -9,6 +9,9 @@ export default defineConfig({
     port: 5173,
     strictPort: false,
     open: true,
+    proxy: {
+      '/api': 'http://127.0.0.1:3000',
+    },
   },
   preview: {
     host: '127.0.0.1',

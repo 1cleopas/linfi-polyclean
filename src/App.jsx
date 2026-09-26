@@ -6,12 +6,14 @@ import Services from './pages/Services'
 import About from './pages/About'
 import Pricing from './pages/Pricing'
 import Contact from './pages/Contact'
+import Admin from './pages/Admin'
 import NotFound from './pages/NotFound'
 
 export default function App() {
   return (
     <QuoteProvider>
       <Routes>
+        <Route path="/admin" element={<Admin />} />
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
           <Route path="/services" element={<Services />} />

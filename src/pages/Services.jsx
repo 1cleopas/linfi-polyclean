@@ -29,12 +29,12 @@ export default function Services() {
     <>
       <Seo
         title="Polytank Cleaning Services in Accra | Linfi Polyclean"
-        description="Residential, commercial and estate polytank cleaning plus water tank disinfection and tank inspection in Accra, Ghana."
+        description="Residential, apartment, estate and commercial polytank cleaning plus water tank disinfection in Accra, Ghana."
         path="/services"
       />
       <PageHero
         title="Our Services"
-        subtitle="Polytank cleaning, disinfection, residential and commercial tank work, estate cleaning and visual inspections."
+        subtitle="Polytank cleaning, disinfection, and tank work for homes, apartments, estates and businesses."
         image={images.hero}
         imageAlt="Technician cleaning a polytank in Accra"
       />

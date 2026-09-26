@@ -4,18 +4,22 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 5173",
-    "start": "vite --host 127.0.0.1 --port 5173",
+    "dev": "concurrently -k \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:client": "vite --host 127.0.0.1 --port 5173",
+    "dev:server": "node --watch server/index.js",
+    "start": "node server/index.js",
     "build": "vite build && node -e \"require('fs').copyFileSync('dist/index.html','dist/404.html')\"",
     "preview": "vite preview --host 127.0.0.1 --port 4173"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "@vitejs/plugin-react": "^6.1.0",
+    "concurrently": "^9.2.1",
     "tailwindcss": "^4.3.3",
     "vite": "^8.2.2"
   },
   "dependencies": {
+    "express": "^5.1.0",
     "lucide-react": "^1.34.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
