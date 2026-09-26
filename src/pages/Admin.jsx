@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { CalendarDays, CircleDollarSign, ClipboardList, LogOut, Plus, Search } from 'lucide-react'
 import { services, tankSizes, tankTypes } from '../data/content'
-import { upcomingWorkWeeks, WEEKLY_BOOKING_LIMIT } from '../lib/weeks'
+import { workWeeksForMonths, WEEKLY_BOOKING_LIMIT } from '../lib/weeks'
 import {
   adminLogin,
   createAdminJob,
@@ -64,12 +64,13 @@ export default function Admin() {
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('all')
-  const [sort, setSort] = useState('newest')
-  const [month, setMonth] = useState(() => monthKey(new Date()))
+  const [sort, setSort] = useState('week')
+  const [weekFilter, setWeekFilter] = useState('all')
+  const [month, setMonth] = useState('all')
   const [selected, setSelected] = useState(null)
   const [adding, setAdding] = useState(false)
   const [draft, setDraft] = useState(emptyJob)
-  const weeks = useMemo(() => upcomingWorkWeeks(12), [])
+  const weeks = useMemo(() => workWeeksForMonths(3), [])
 
   async function refresh() {
     const data = await listAdminJobs()
@@ -132,6 +133,7 @@ export default function Admin() {
     const query = search.trim().toLowerCase()
     const next = jobs.filter((job) => {
       if (status !== 'all' && job.status !== status) return false
+      if (weekFilter !== 'all' && job.week !== weekFilter) return false
       if (month !== 'all' && jobMonth(job) !== month) return false
       if (!query) return true
       return [job.fullName, job.phone, job.location, job.week, job.service, job.tankSize]
@@ -142,12 +144,17 @@ export default function Admin() {
 
     next.sort((a, b) => {
       if (sort === 'amount') return (Number(b.amount) || 0) - (Number(a.amount) || 0)
-      if (sort === 'week') return String(a.week).localeCompare(String(b.week))
+      if (sort === 'week') {
+        const order = weeks.map((week) => week.label)
+        const aIndex = order.indexOf(a.week)
+        const bIndex = order.indexOf(b.week)
+        return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex)
+      }
       if (sort === 'status') return String(a.status).localeCompare(String(b.status))
       return String(b.createdAt).localeCompare(String(a.createdAt))
     })
     return next
-  }, [jobs, month, search, sort, status])
+  }, [jobs, month, search, sort, status, weekFilter, weeks])
 
   const months = useMemo(() => {
     const keys = new Set(jobs.map(jobMonth))
@@ -281,6 +288,14 @@ export default function Admin() {
             {STATUSES.map((item) => (
               <option key={item.value} value={item.value}>
                 {item.label}
+              </option>
+            ))}
+          </select>
+          <select className={fieldClass + ' md:w-64'} value={weekFilter} onChange={(e) => setWeekFilter(e.target.value)}>
+            <option value="all">All weeks (next 3 months)</option>
+            {weeks.map((week) => (
+              <option key={week.value} value={week.label}>
+                {week.label} ({weekCounts[week.label] || 0}/{WEEKLY_BOOKING_LIMIT})
               </option>
             ))}
           </select>

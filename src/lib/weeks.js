@@ -39,6 +39,24 @@ export function startOfWorkWeek(from = new Date()) {
   return addDays(today, -daysSinceTuesday)
 }
 
+export function workWeeksForMonths(months = 3) {
+  const end = atMidnight(new Date())
+  end.setMonth(end.getMonth() + months)
+  let tuesday = startOfWorkWeek()
+  const weeks = []
+
+  while (tuesday <= end) {
+    const sunday = addDays(tuesday, 5)
+    weeks.push({
+      value: isoDate(tuesday),
+      label: `${formatDay(tuesday)} – ${formatDay(sunday)}`,
+    })
+    tuesday = addDays(tuesday, 7)
+  }
+
+  return weeks
+}
+
 export function upcomingWorkWeeks(count = 8) {
   let tuesday = startOfWorkWeek()
   const weeks = []
