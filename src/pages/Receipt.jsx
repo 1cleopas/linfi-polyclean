@@ -76,6 +76,7 @@ export default function Receipt() {
 
   async function sendPdf() {
     setShareNote('')
+    const digits = whatsappDigits(job)
     const blob = buildReceiptPdf({
       number,
       date: formatDate(job.updatedAt || job.createdAt),
@@ -85,11 +86,14 @@ export default function Receipt() {
       company,
     })
     const file = new File([blob], `${number}.pdf`, { type: 'application/pdf' })
-    const digits = whatsappDigits(job)
+
+    if (digits) {
+      window.open(`https://wa.me/${digits}`, '_blank', 'noopener,noreferrer')
+    }
 
     if (navigator.canShare?.({ files: [file] })) {
       try {
-        await navigator.share({ files: [file] })
+        await navigator.share({ files: [file], title: `${number}.pdf` })
         return
       } catch (err) {
         if (err?.name === 'AbortError') return
@@ -102,8 +106,7 @@ export default function Receipt() {
     link.download = `${number}.pdf`
     link.click()
     window.setTimeout(() => URL.revokeObjectURL(url), 1000)
-    if (digits) window.open(`https://wa.me/${digits}`, '_blank', 'noopener,noreferrer')
-    setShareNote('The PDF was downloaded. Attach that file in the WhatsApp chat that just opened. Do not send it as a typed message.')
+    setShareNote('The customer’s WhatsApp chat is open. Drop in the downloaded PDF to finish sending it.')
   }
 
   return (
