@@ -7,6 +7,7 @@ import About from './pages/About'
 import Pricing from './pages/Pricing'
 import Contact from './pages/Contact'
 import Admin from './pages/Admin'
+import Receipt from './pages/Receipt'
 import NotFound from './pages/NotFound'
 
 export default function App() {
@@ -14,6 +15,7 @@ export default function App() {
     <QuoteProvider>
       <Routes>
         <Route path="/admin" element={<Admin />} />
+        <Route path="/admin/receipt/:id" element={<Receipt />} />
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
           <Route path="/services" element={<Services />} />

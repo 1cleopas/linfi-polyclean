@@ -62,6 +62,15 @@ app.get('/api/admin/jobs', requireAdmin, (_req, res) => {
   res.json({ jobs: listJobs(), weekLimit: WEEKLY_BOOKING_LIMIT })
 })
 
+app.get('/api/admin/jobs/:id', requireAdmin, (req, res) => {
+  const job = listJobs().find((item) => item.id === req.params.id)
+  if (!job) {
+    res.status(404).json({ error: 'Job not found.' })
+    return
+  }
+  res.json({ job })
+})
+
 app.post('/api/admin/jobs', requireAdmin, (req, res) => {
   try {
     const job = createJob({ ...(req.body || {}), source: req.body?.source || 'manual' })

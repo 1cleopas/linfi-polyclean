@@ -45,6 +45,10 @@ export function listAdminJobs() {
   return request('/api/admin/jobs', { auth: true })
 }
 
+export function getAdminJob(id) {
+  return request(`/api/admin/jobs/${id}`, { auth: true })
+}
+
 export function createAdminJob(payload) {
   return request('/api/admin/jobs', { method: 'POST', auth: true, body: payload })
 }

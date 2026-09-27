@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CalendarDays, CircleDollarSign, ClipboardList, LogOut, Plus, Search } from 'lucide-react'
+import { CalendarDays, CircleDollarSign, ClipboardList, LogOut, Plus, ReceiptText, Search } from 'lucide-react'
 import { services, tankSizes, tankTypes } from '../data/content'
 import { workWeeksForMonths, WEEKLY_BOOKING_LIMIT } from '../lib/weeks'
 import {
@@ -327,6 +327,7 @@ export default function Admin() {
                 <th className="px-4 py-3">Service</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 text-right">Amount</th>
+                <th className="px-4 py-3 text-right">Receipt</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline/30">
@@ -353,11 +354,23 @@ export default function Admin() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right font-semibold text-secondary">{formatCedis(job.amount)}</td>
+                  <td className="px-4 py-3 text-right">
+                    <a
+                      href={`/admin/receipt/${job.id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 rounded-full bg-surface px-3 py-1.5 text-xs font-semibold text-primary hover:bg-surface-low"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ReceiptText className="h-3.5 w-3.5" aria-hidden="true" />
+                      Receipt
+                    </a>
+                  </td>
                 </tr>
               ))}
               {visible.length === 0 && (
                 <tr>
-                  <td className="px-4 py-10 text-center text-muted" colSpan={5}>
+                  <td className="px-4 py-10 text-center text-muted" colSpan={6}>
                     No jobs match these filters yet.
                   </td>
                 </tr>
@@ -476,6 +489,11 @@ export default function Admin() {
               >
                 Close
               </Button>
+              {!adding && selected && (
+                <Button type="button" variant="outline" href={`/admin/receipt/${selected.id}`} target="_blank">
+                  Receipt
+                </Button>
+              )}
               {!adding && selected && (
                 <Button type="button" variant="ghost" onClick={() => removeJob(selected.id)}>
                   Delete
