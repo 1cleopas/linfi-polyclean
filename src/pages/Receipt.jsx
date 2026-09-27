@@ -77,6 +77,7 @@ export default function Receipt() {
   async function sendPdf() {
     setShareNote('')
     const digits = whatsappDigits(job)
+    const filename = `${number}.pdf`
     const blob = buildReceiptPdf({
       number,
       date: formatDate(job.updatedAt || job.createdAt),
@@ -85,15 +86,14 @@ export default function Receipt() {
       amount: formatCedis(job.amount).replace('GH₵', 'GHS '),
       company,
     })
-    const file = new File([blob], `${number}.pdf`, { type: 'application/pdf' })
+    const file = new File([blob], filename, { type: 'application/pdf' })
+    const caption = `Receipt ${number} for ${job.fullName}`
 
-    if (digits) {
-      window.open(`https://wa.me/${digits}`, '_blank', 'noopener,noreferrer')
-    }
-
+    // Share the PDF first. Opening wa.me before this leaves an empty chat,
+    // because a WhatsApp link cannot carry a file.
     if (navigator.canShare?.({ files: [file] })) {
       try {
-        await navigator.share({ files: [file], title: `${number}.pdf` })
+        await navigator.share({ files: [file], title: filename, text: caption })
         return
       } catch (err) {
         if (err?.name === 'AbortError') return
@@ -103,10 +103,17 @@ export default function Receipt() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `${number}.pdf`
+    link.download = filename
     link.click()
     window.setTimeout(() => URL.revokeObjectURL(url), 1000)
-    setShareNote('The customer’s WhatsApp chat is open. Drop in the downloaded PDF to finish sending it.')
+
+    if (digits) {
+      window.open(`https://wa.me/${digits}`, '_blank', 'noopener,noreferrer')
+    }
+
+    setShareNote(
+      `${filename} is in your Downloads. In the open chat, tap the paperclip, choose Document, and select that file.`,
+    )
   }
 
   return (
