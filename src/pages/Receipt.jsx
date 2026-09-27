@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { company } from '../data/content'
 import { getAdminJob, getAdminToken } from '../lib/api'
+import { buildReceiptPdf } from '../lib/receiptPdf'
 import Button from '../components/Button'
 
 function receiptNumber(job) {
@@ -33,6 +34,7 @@ export default function Receipt() {
   const { id } = useParams()
   const [job, setJob] = useState(null)
   const [error, setError] = useState('')
+  const [shareNote, setShareNote] = useState('')
 
   useEffect(() => {
     if (!getAdminToken()) {
@@ -72,12 +74,37 @@ export default function Receipt() {
     ['Preferred week', job.week],
   ].filter(([, value]) => value)
 
-  const shareText = [
-    `${company.name} receipt ${number}`,
-    `Customer: ${job.fullName}`,
-    `Amount: ${formatCedis(job.amount)}`,
-    paid ? 'Status: Paid' : 'Status: Unpaid',
-  ].join('\n')
+  async function sendPdf() {
+    setShareNote('')
+    const blob = buildReceiptPdf({
+      number,
+      date: formatDate(job.updatedAt || job.createdAt),
+      paid,
+      rows,
+      amount: formatCedis(job.amount).replace('GH₵', 'GHS '),
+      company,
+    })
+    const file = new File([blob], `${number}.pdf`, { type: 'application/pdf' })
+    const digits = whatsappDigits(job)
+
+    if (navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file] })
+        return
+      } catch (err) {
+        if (err?.name === 'AbortError') return
+      }
+    }
+
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${number}.pdf`
+    link.click()
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+    if (digits) window.open(`https://wa.me/${digits}`, '_blank', 'noopener,noreferrer')
+    setShareNote('The PDF was downloaded. Attach that file in the WhatsApp chat that just opened. Do not send it as a typed message.')
+  }
 
   return (
     <main className="min-h-screen bg-surface px-4 py-8 print:bg-white print:p-0">
@@ -87,13 +114,11 @@ export default function Receipt() {
             Print receipt
           </Button>
           {whatsappDigits(job) && (
-            <Button
-              variant="whatsapp"
-              href={`https://wa.me/${whatsappDigits(job)}?text=${encodeURIComponent(shareText)}`}
-            >
-              Send on WhatsApp
+            <Button variant="whatsapp" onClick={sendPdf}>
+              Send PDF on WhatsApp
             </Button>
           )}
+          {shareNote && <p className="w-full text-sm text-muted">{shareNote}</p>}
           <Button variant="outline" to="/admin">
             Back to dashboard
           </Button>
