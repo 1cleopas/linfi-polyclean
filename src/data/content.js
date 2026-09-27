@@ -82,20 +82,11 @@ export const services = [
   {
     id: 'polytank-cleaning',
     icon: 'droplets',
-    name: 'Polytank Cleaning',
-    short: 'Thorough cleaning of residential and commercial water storage tanks.',
+    name: 'Polytank Cleaning & Water Tank Disinfection',
+    short: 'Thorough cleaning and disinfection of residential and commercial water storage tanks.',
     description:
-      'We clean residential and commercial polytanks, removing visible sediment, dirt, sludge, algae and biofilm so the tank is left in a neat, well-maintained condition.',
-    quoteValue: 'Polytank Cleaning',
-  },
-  {
-    id: 'disinfection',
-    icon: 'sparkles',
-    name: 'Water Tank Disinfection',
-    short: 'Professional cleaning and disinfection procedures designed to improve tank hygiene.',
-    description:
-      'After cleaning, we apply professional disinfection procedures designed to improve tank hygiene. This supports a cleaner storage environment — it is not a guarantee that water is safe to drink on its own.',
-    quoteValue: 'Water Tank Disinfection',
+      'We clean residential and commercial polytanks, removing visible sediment, dirt, sludge, algae and biofilm, then apply professional disinfection procedures to improve tank hygiene. This supports a cleaner storage environment — it is not a guarantee that water is safe to drink on its own.',
+    quoteValue: 'Polytank Cleaning & Water Tank Disinfection',
   },
   {
     id: 'residential',
@@ -128,8 +119,7 @@ export const tankTypes = [
 ]
 
 export const tankSizes = [
-  '1L – 500L',
-  '501L – 1,500L',
+  '500L – 1,500L',
   '1,501L – 2,500L',
   '2,501L – 3,500L',
   '3,501L – 4,500L',
@@ -287,7 +277,7 @@ export const faqs = [
   },
   {
     q: 'Do you provide disinfection services?',
-    a: 'Yes. Water tank disinfection is one of our core services. We use professional cleaning and disinfection procedures designed to improve tank hygiene. Tank cleaning and disinfection help maintain a cleaner storage environment; they do not, on their own, guarantee that water is safe to drink.',
+    a: 'Yes. Polytank cleaning includes water tank disinfection. We clean the tank, then apply professional disinfection procedures designed to improve tank hygiene. This helps maintain a cleaner storage environment; it does not, on its own, guarantee that water is safe to drink.',
   },
   {
     q: 'How much does polytank cleaning cost?',

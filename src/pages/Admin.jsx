@@ -429,6 +429,13 @@ export default function Admin() {
                   onChange={(e) => (adding ? setDraft({ ...draft, tankSize: e.target.value }) : setSelected({ ...selected, tankSize: e.target.value }))}
                 >
                   <option value="">Select size</option>
+                  {(() => {
+                    const current = adding ? draft.tankSize : selected.tankSize
+                    if (current && !tankSizes.includes(current)) {
+                      return <option value={current}>{current}</option>
+                    }
+                    return null
+                  })()}
                   {tankSizes.map((item) => (
                     <option key={item} value={item}>
                       {item}

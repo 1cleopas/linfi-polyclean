@@ -6,6 +6,8 @@ import { createBooking } from '../lib/api'
 import { useQuote } from '../context/QuoteContext'
 import Button from './Button'
 
+const MAX_TANK_SIZE_FIELDS = 8
+
 const empty = {
   fullName: '',
   phone: '',
@@ -13,11 +15,34 @@ const empty = {
   location: '',
   tankType: '',
   tankSize: '',
+  tankSizesByTank: [''],
   tanks: '',
   week: '',
   time: '',
   extra: '',
   service: '',
+}
+
+function tankCount(value) {
+  const count = Number.parseInt(String(value).trim(), 10)
+  if (!Number.isFinite(count) || count < 2) return 1
+  return count
+}
+
+function sizeFieldCount(value) {
+  return Math.min(tankCount(value), MAX_TANK_SIZE_FIELDS)
+}
+
+function bookedTankSize(values) {
+  const count = sizeFieldCount(values.tanks)
+  const sizes = Array.from({ length: count }, (_, index) => values.tankSizesByTank?.[index] || '')
+  if (tankCount(values.tanks) >= 2) {
+    return sizes
+      .map((size, index) => (size ? `Tank ${index + 1}: ${size}` : ''))
+      .filter(Boolean)
+      .join('; ')
+  }
+  return sizes[0] || values.tankSize || ''
 }
 
 const AUTO_PREFIX = 'I would like: '
@@ -49,7 +74,7 @@ function bookingMessage(values) {
     `Location: ${values.location}`,
     values.service ? `Service: ${values.service}` : '',
     values.tankType ? `Tank type: ${values.tankType}` : '',
-    values.tankSize ? `Tank size: ${values.tankSize}` : '',
+    bookedTankSize(values) ? `Tank size: ${bookedTankSize(values)}` : '',
     values.tanks ? `Number of tanks: ${values.tanks}` : '',
     values.week ? `Preferred week: ${values.week} (working days ${WORK_DAYS}, up to ${WEEKLY_BOOKING_LIMIT} bookings)` : '',
     values.time ? `Preferred time: ${values.time}` : '',
@@ -92,7 +117,24 @@ export default function BookingForm() {
 
   const onChange = (e) => {
     const { name, value } = e.target
-    setValues((prev) => ({ ...prev, [name]: value }))
+    setValues((prev) => {
+      if (name !== 'tanks') return { ...prev, [name]: value }
+      const count = sizeFieldCount(value)
+      const tankSizesByTank = Array.from({ length: count }, (_, index) => prev.tankSizesByTank?.[index] || (index === 0 ? prev.tankSize : ''))
+      return { ...prev, tanks: value, tankSizesByTank }
+    })
+  }
+
+  const onTankSizeChange = (index, value) => {
+    setValues((prev) => {
+      const tankSizesByTank = Array.from({ length: Math.max(prev.tankSizesByTank.length, index + 1) }, (_, i) => prev.tankSizesByTank[i] || '')
+      tankSizesByTank[index] = value
+      return {
+        ...prev,
+        tankSizesByTank,
+        tankSize: sizeFieldCount(prev.tanks) < 2 ? value : prev.tankSize,
+      }
+    })
   }
 
   const onSubmit = async (e) => {
@@ -111,7 +153,7 @@ export default function BookingForm() {
         location: values.location,
         service: values.service,
         tankType: values.tankType,
-        tankSize: values.tankSize,
+        tankSize: bookedTankSize(values),
         tanks: values.tanks,
         week: values.week,
         time: values.time,
@@ -218,20 +260,44 @@ export default function BookingForm() {
         </select>
       </label>
       <label className="flex flex-col gap-1.5 text-xs font-semibold tracking-wide text-muted uppercase">
-        Tank Size
-        <select className={fieldClass} name="tankSize" value={values.tankSize} onChange={onChange}>
-          <option value="">Select size</option>
-          {tankSizes.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="flex flex-col gap-1.5 text-xs font-semibold tracking-wide text-muted uppercase">
         Number of Tanks
         <input className={fieldClass} name="tanks" value={values.tanks} onChange={onChange} inputMode="numeric" placeholder="e.g. 1" />
       </label>
+      {sizeFieldCount(values.tanks) < 2 ? (
+        <label className="flex flex-col gap-1.5 text-xs font-semibold tracking-wide text-muted uppercase">
+          Tank Size
+          <select className={fieldClass} value={values.tankSizesByTank[0] || ''} onChange={(e) => onTankSizeChange(0, e.target.value)}>
+            <option value="">Select size</option>
+            {tankSizes.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : (
+        <div className="grid grid-cols-1 gap-5 md:col-span-2 md:grid-cols-2">
+          {Array.from({ length: sizeFieldCount(values.tanks) }, (_, index) => (
+            <label key={index} className="flex flex-col gap-1.5 text-xs font-semibold tracking-wide text-muted uppercase">
+              Tank {index + 1} size
+              <select className={fieldClass} value={values.tankSizesByTank[index] || ''} onChange={(e) => onTankSizeChange(index, e.target.value)}>
+                <option value="">Select size</option>
+                {tankSizes.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ))}
+          <p className="text-sm font-medium normal-case text-muted md:col-span-2">
+            Choose a size for each tank if they are different.
+            {tankCount(values.tanks) > MAX_TANK_SIZE_FIELDS
+              ? ` For tanks after ${MAX_TANK_SIZE_FIELDS}, list the other sizes in Additional Information.`
+              : ''}
+          </p>
+        </div>
+      )}
       <label className="flex flex-col gap-1.5 text-xs font-semibold tracking-wide text-muted uppercase">
         Preferred Week *
         <select className={fieldClass} name="week" value={values.week} onChange={onChange}>
