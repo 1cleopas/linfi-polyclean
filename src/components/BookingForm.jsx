@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { CircleCheckBig } from 'lucide-react'
 import { hasWhatsApp, tankSizes, tankTypes, tryOpenWhatsApp } from '../data/content'
-import { upcomingWorkWeeks, WEEKLY_BOOKING_LIMIT, WORK_DAYS } from '../lib/weeks'
+import { workWeeksForMonths, WEEKLY_BOOKING_LIMIT, WORK_DAYS } from '../lib/weeks'
 import { createBooking } from '../lib/api'
 import { useQuote } from '../context/QuoteContext'
 import Button from './Button'
@@ -102,7 +102,7 @@ export default function BookingForm() {
   const [whatsappLink, setWhatsappLink] = useState(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
-  const workWeeks = useMemo(() => upcomingWorkWeeks(8), [])
+  const workWeeks = useMemo(() => workWeeksForMonths(3), [])
 
   useEffect(() => {
     setValues((prev) => {
@@ -160,7 +160,7 @@ export default function BookingForm() {
         extra: values.extra,
       })
     } catch (err) {
-      setErrors((prev) => ({ ...prev, week: err.message }))
+      if (err.status === 409) setErrors((prev) => ({ ...prev, week: err.message }))
       setSaveError(err.message || 'The booking could not be saved. Please try again.')
       setSaving(false)
       return

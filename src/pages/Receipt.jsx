@@ -25,8 +25,10 @@ function formatDate(value) {
 }
 
 function whatsappDigits(job) {
-  const raw = String(job.whatsapp || job.phone || '').replace(/\D/g, '')
+  let raw = String(job.whatsapp || job.phone || '').replace(/\D/g, '')
+  if (raw.startsWith('00')) raw = raw.slice(2)
   if (raw.startsWith('0')) return `233${raw.slice(1)}`
+  if (raw.length === 9) return `233${raw}`
   return raw
 }
 

@@ -37,13 +37,32 @@ export function countWeekBookings(week, exceptId) {
   ).length
 }
 
+function weekFullError() {
+  const error = new Error(`This week already has ${WEEKLY_BOOKING_LIMIT} bookings.`)
+  error.code = 'WEEK_FULL'
+  return error
+}
+
+function occupiesWeek(status) {
+  return status !== 'cancelled'
+}
+
 export function createJob(input) {
   const jobs = readJobs()
   const week = String(input.week || '').trim()
-  if (week && countWeekBookings(week) >= WEEKLY_BOOKING_LIMIT) {
-    const error = new Error(`This week already has ${WEEKLY_BOOKING_LIMIT} bookings.`)
-    error.code = 'WEEK_FULL'
+  const status = input.status || 'new'
+  if (!String(input.fullName || '').trim()) {
+    const error = new Error('Name is required.')
+    error.code = 'INVALID'
     throw error
+  }
+  if (!String(input.phone || '').trim()) {
+    const error = new Error('Phone is required.')
+    error.code = 'INVALID'
+    throw error
+  }
+  if (week && occupiesWeek(status) && countWeekBookings(week) >= WEEKLY_BOOKING_LIMIT) {
+    throw weekFullError()
   }
 
   const now = new Date().toISOString()
@@ -62,7 +81,7 @@ export function createJob(input) {
     week,
     time: String(input.time || '').trim(),
     extra: String(input.extra || '').trim(),
-    status: input.status || 'new',
+    status,
     amount: input.amount === '' || input.amount == null ? null : Number(input.amount),
     notes: String(input.notes || '').trim(),
     source: input.source || 'website',
@@ -81,9 +100,20 @@ export function updateJob(id, patch) {
 
   const current = jobs[index]
   const nextWeek = patch.week != null ? String(patch.week).trim() : current.week
-  if (nextWeek && nextWeek !== current.week && countWeekBookings(nextWeek, id) >= WEEKLY_BOOKING_LIMIT) {
-    const error = new Error(`This week already has ${WEEKLY_BOOKING_LIMIT} bookings.`)
-    error.code = 'WEEK_FULL'
+  const nextStatus = patch.status != null ? patch.status : current.status
+  const willOccupy = Boolean(nextWeek) && occupiesWeek(nextStatus)
+  const alreadyOccupies = current.week === nextWeek && occupiesWeek(current.status)
+  if (willOccupy && !alreadyOccupies && countWeekBookings(nextWeek, id) >= WEEKLY_BOOKING_LIMIT) {
+    throw weekFullError()
+  }
+  if (patch.fullName != null && !String(patch.fullName).trim()) {
+    const error = new Error('Name is required.')
+    error.code = 'INVALID'
+    throw error
+  }
+  if (patch.phone != null && !String(patch.phone).trim()) {
+    const error = new Error('Phone is required.')
+    error.code = 'INVALID'
     throw error
   }
 
@@ -94,6 +124,11 @@ export function updateJob(id, patch) {
     createdAt: current.createdAt,
     updatedAt: new Date().toISOString(),
   }
+
+  next.week = nextWeek
+  next.status = nextStatus
+  if (patch.fullName != null) next.fullName = String(patch.fullName).trim()
+  if (patch.phone != null) next.phone = String(patch.phone).trim()
 
   if (patch.amount !== undefined) {
     next.amount = patch.amount === '' || patch.amount == null ? null : Number(patch.amount)

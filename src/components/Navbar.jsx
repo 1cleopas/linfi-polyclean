@@ -41,6 +41,7 @@ export default function Navbar() {
 
   const isActive = (to) => {
     const hash = getHashId(to)
+    if (!hash) return location.pathname === to
     if (location.pathname !== '/') return false
     if (hash === 'home') return !location.hash || location.hash === '#home'
     return location.hash === `#${hash}`

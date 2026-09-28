@@ -1,11 +1,34 @@
 import express from 'express'
+import { createHmac, timingSafeEqual } from 'node:crypto'
 import { join } from 'node:path'
 import { countWeekBookings, createJob, deleteJob, listJobs, updateJob } from './store.js'
 import { WEEKLY_BOOKING_LIMIT } from '../src/lib/weeks.js'
 
 const app = express()
-const tokens = new Set()
 const adminPassword = process.env.ADMIN_PASSWORD || 'linfi-admin'
+const SESSION_MS = 1000 * 60 * 60 * 24 * 14
+
+function signSession() {
+  const payload = Buffer.from(JSON.stringify({ exp: Date.now() + SESSION_MS })).toString('base64url')
+  const sig = createHmac('sha256', adminPassword).update(payload).digest('base64url')
+  return `${payload}.${sig}`
+}
+
+function hasValidSession(token) {
+  const parts = String(token || '').split('.')
+  if (parts.length !== 2) return false
+  const [payload, sig] = parts
+  const expected = createHmac('sha256', adminPassword).update(payload).digest('base64url')
+  const left = Buffer.from(sig)
+  const right = Buffer.from(expected)
+  if (left.length !== right.length || !timingSafeEqual(left, right)) return false
+  try {
+    const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'))
+    return typeof data.exp === 'number' && data.exp > Date.now()
+  } catch {
+    return false
+  }
+}
 const port = Number(process.env.PORT) || 3000
 
 app.use(express.json({ limit: '200kb' }))
@@ -13,7 +36,7 @@ app.use(express.json({ limit: '200kb' }))
 function requireAdmin(req, res, next) {
   const header = req.headers.authorization || ''
   const token = header.startsWith('Bearer ') ? header.slice(7) : ''
-  if (!token || !tokens.has(token)) {
+  if (!hasValidSession(token)) {
     res.status(401).json({ error: 'Please sign in as manager.' })
     return
   }
@@ -44,6 +67,10 @@ app.post('/api/bookings', (req, res) => {
       res.status(409).json({ error: error.message })
       return
     }
+    if (error.code === 'INVALID') {
+      res.status(400).json({ error: error.message })
+      return
+    }
     res.status(500).json({ error: 'Could not save this booking.' })
   }
 })
@@ -53,9 +80,7 @@ app.post('/api/admin/login', (req, res) => {
     res.status(401).json({ error: 'Wrong password.' })
     return
   }
-  const token = crypto.randomUUID()
-  tokens.add(token)
-  res.json({ token })
+  res.json({ token: signSession() })
 })
 
 app.get('/api/admin/jobs', requireAdmin, (_req, res) => {

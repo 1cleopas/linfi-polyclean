@@ -2,6 +2,7 @@ import { Clock, Mail, MapPin, MessageCircle, Phone } from 'lucide-react'
 import {
   company,
   emailHref,
+  hasHours,
   hasWhatsApp,
   phoneHref,
   whatsappUrl,
@@ -40,8 +41,8 @@ export default function ContactDetails() {
     },
     { icon: Mail, label: 'Email', value: company.email, href: emailHref() },
     { icon: MapPin, label: 'Service Area', value: company.serviceArea },
-    { icon: Clock, label: 'Working Hours', value: company.hours },
-  ]
+    hasHours() ? { icon: Clock, label: 'Working Hours', value: company.hours } : null,
+  ].filter(Boolean)
 
   return (
     <ul className="mt-8 space-y-4">

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { CalendarDays, CircleDollarSign, ClipboardList, LogOut, Plus, ReceiptText, Search } from 'lucide-react'
 import { services, tankSizes, tankTypes } from '../data/content'
 import { workWeeksForMonths, WEEKLY_BOOKING_LIMIT } from '../lib/weeks'
@@ -61,6 +61,7 @@ export default function Admin() {
   const [password, setPassword] = useState('')
   const [jobs, setJobs] = useState([])
   const [error, setError] = useState('')
+  const [loadError, setLoadError] = useState('')
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('all')
@@ -71,10 +72,19 @@ export default function Admin() {
   const [adding, setAdding] = useState(false)
   const [draft, setDraft] = useState(emptyJob)
   const weeks = useMemo(() => workWeeksForMonths(3), [])
+  const requestSeq = useRef(0)
 
   async function refresh() {
-    const data = await listAdminJobs()
-    setJobs(data.jobs || [])
+    const seq = ++requestSeq.current
+    try {
+      const data = await listAdminJobs()
+      if (seq !== requestSeq.current) return
+      setJobs(data.jobs || [])
+      setLoadError('')
+    } catch (err) {
+      if (seq !== requestSeq.current) return
+      throw err
+    }
   }
 
   useEffect(() => {
@@ -90,7 +100,7 @@ export default function Admin() {
             setAdminToken('')
             setTokenReady(false)
           }
-          setError(err.message)
+          setLoadError(err.message)
         })
         .finally(() => {
           if (!cancelled && showSpinner) setLoading(false)
@@ -183,6 +193,7 @@ export default function Admin() {
       const data = await updateAdminJob(selected.id, selected)
       setJobs((prev) => prev.map((job) => (job.id === data.job.id ? data.job : job)))
       setSelected(null)
+      await refresh()
     } catch (err) {
       setError(err.message)
     }
@@ -196,6 +207,7 @@ export default function Admin() {
       setJobs((prev) => [data.job, ...prev])
       setDraft(emptyJob)
       setAdding(false)
+      await refresh()
     } catch (err) {
       setError(err.message)
     }
@@ -207,6 +219,7 @@ export default function Admin() {
       await deleteAdminJob(id)
       setJobs((prev) => prev.filter((job) => job.id !== id))
       if (selected?.id === id) setSelected(null)
+      await refresh()
     } catch (err) {
       setError(err.message)
     }
@@ -315,7 +328,7 @@ export default function Admin() {
           </select>
         </div>
 
-        {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+        {(error || loadError) && <p className="mt-4 text-sm text-red-600">{error || loadError}</p>}
         {loading && <p className="mt-4 text-sm text-muted">Loading jobs…</p>}
 
         <div className="mt-6 overflow-x-auto rounded-2xl bg-white shadow-[var(--shadow-card)]">
@@ -399,6 +412,13 @@ export default function Admin() {
                   onChange={(e) => (adding ? setDraft({ ...draft, week: e.target.value }) : setSelected({ ...selected, week: e.target.value }))}
                 >
                   <option value="">Select week</option>
+                  {(() => {
+                    const current = adding ? draft.week : selected.week
+                    if (current && !weeks.some((week) => week.label === current)) {
+                      return <option value={current}>{current}</option>
+                    }
+                    return null
+                  })()}
                   {weeks.map((week) => (
                     <option key={week.value} value={week.label}>
                       {week.label} ({weekCounts[week.label] || 0}/{WEEKLY_BOOKING_LIMIT})

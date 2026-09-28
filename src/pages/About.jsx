@@ -17,20 +17,12 @@ export default function About() {
       <PageHero
         title="About LINFI POLYCLEAN"
         subtitle="An Accra-based specialist in polytank cleaning and disinfection."
-        image={images.about}
-        imageAlt="Technicians cleaning a water storage tank at a residential compound in Accra"
+        image={images.hero}
+        imageAlt="Technician wearing a face mask while cleaning a polytank in Accra"
       />
 
       <section className="bg-white py-16 md:py-24">
-        <div className="mx-auto grid max-w-[1200px] items-center gap-12 px-4 md:px-10 lg:grid-cols-2">
-          <Reveal>
-            <img
-              src={images.whyUs}
-              alt="Linfi Polyclean crew at a Ghanaian residential compound"
-              className="h-[380px] w-full rounded-3xl object-cover shadow-[var(--shadow-card)] md:h-[460px]"
-              loading="lazy"
-            />
-          </Reveal>
+        <div className="mx-auto max-w-3xl px-4 md:px-10">
           <div>
             <SectionHeader align="left" eyebrow="Our story" title={aboutStory.heading} />
             {aboutStory.body.map((para) => (

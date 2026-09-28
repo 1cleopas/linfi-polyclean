@@ -27,6 +27,10 @@ function isUnset(value) {
   return !value || /\[ADD\b|000000000|example\.com/i.test(String(value))
 }
 
+export function hasHours() {
+  return !isUnset(company.hours)
+}
+
 export function hasPhone() {
   return !isUnset(company.phone) && !isUnset(company.phoneHref)
 }
@@ -62,7 +66,7 @@ export const socialLinks = []
 
 export const navLinks = [
   { to: '/#home', label: 'Home' },
-  { to: '/#about', label: 'About Us' },
+  { to: '/about', label: 'About Us' },
   { to: '/#services', label: 'Our Services' },
   { to: '/#pricing', label: 'Pricing' },
   { to: '/#how-it-works', label: 'How It Works' },
@@ -300,10 +304,6 @@ export const aboutStory = {
 
 export const images = {
   hero: '/images/hero-tank-cleaning.png',
-  about: '/images/technicians-compound.png',
-  whyUs: '/images/technicians-compound.png',
-  before: '/images/tank-before.png',
-  after: '/images/tank-after.png',
   accra: '/images/accra-neighborhood.png',
 }
 

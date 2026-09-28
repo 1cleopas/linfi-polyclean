@@ -52,7 +52,7 @@ export default function Services() {
               >
                 <div className={`relative h-64 lg:h-full ${reverse ? 'lg:order-2' : ''}`}>
                   <img
-                    src={index % 2 === 0 ? images.whyUs : images.after}
+                    src={images.hero}
                     alt={`${service.name} in Accra by LINFI POLYCLEAN`}
                     className="h-full w-full object-cover"
                     loading="lazy"
