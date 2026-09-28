@@ -47,25 +47,18 @@ function occupiesWeek(status) {
   return status !== 'cancelled'
 }
 
-export function createJob(input) {
-  const jobs = readJobs()
+function invalidError(message) {
+  const error = new Error(message)
+  error.code = 'INVALID'
+  return error
+}
+
+function buildJob(input, now) {
   const week = String(input.week || '').trim()
   const status = input.status || 'new'
-  if (!String(input.fullName || '').trim()) {
-    const error = new Error('Name is required.')
-    error.code = 'INVALID'
-    throw error
-  }
-  if (!String(input.phone || '').trim()) {
-    const error = new Error('Phone is required.')
-    error.code = 'INVALID'
-    throw error
-  }
-  if (week && occupiesWeek(status) && countWeekBookings(week) >= WEEKLY_BOOKING_LIMIT) {
-    throw weekFullError()
-  }
+  if (!String(input.fullName || '').trim()) throw invalidError('Name is required.')
+  if (!String(input.phone || '').trim()) throw invalidError('Phone is required.')
 
-  const now = new Date().toISOString()
   const job = {
     id: crypto.randomUUID(),
     createdAt: now,
@@ -88,9 +81,40 @@ export function createJob(input) {
   }
 
   if (Number.isNaN(job.amount)) job.amount = null
-  jobs.push(job)
-  writeJobs(jobs)
   return job
+}
+
+function assertWeeksHaveRoom(existingJobs, incomingJobs) {
+  const addingByWeek = new Map()
+  for (const job of incomingJobs) {
+    if (!job.week || !occupiesWeek(job.status)) continue
+    addingByWeek.set(job.week, (addingByWeek.get(job.week) || 0) + 1)
+  }
+
+  for (const [week, adding] of addingByWeek) {
+    const existing = existingJobs.filter((job) => job.week === week && job.status !== 'cancelled').length
+    if (existing + adding <= WEEKLY_BOOKING_LIMIT) continue
+    const remaining = Math.max(0, WEEKLY_BOOKING_LIMIT - existing)
+    if (remaining === 0 || adding === 1) throw weekFullError()
+    const error = new Error(
+      `This week has room for ${remaining} more booking${remaining === 1 ? '' : 's'}. This request needs ${adding}, one for each tank.`,
+    )
+    error.code = 'WEEK_FULL'
+    throw error
+  }
+}
+
+export function createJobs(inputs) {
+  const existing = readJobs()
+  const now = new Date().toISOString()
+  const created = inputs.map((input) => buildJob(input, now))
+  assertWeeksHaveRoom(existing, created)
+  writeJobs([...existing, ...created])
+  return created
+}
+
+export function createJob(input) {
+  return createJobs([input])[0]
 }
 
 export function updateJob(id, patch) {

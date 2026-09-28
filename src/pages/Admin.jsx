@@ -67,6 +67,7 @@ export default function Admin() {
   const [status, setStatus] = useState('all')
   const [sort, setSort] = useState('week')
   const [weekFilter, setWeekFilter] = useState('all')
+  const [countWeek, setCountWeek] = useState('')
   const [month, setMonth] = useState('all')
   const [selected, setSelected] = useState(null)
   const [adding, setAdding] = useState(false)
@@ -136,8 +137,13 @@ export default function Admin() {
     return counts
   }, [jobs])
 
-  const currentWeek = weeks[0]?.label || ''
-  const currentWeekCount = weekCounts[currentWeek] || 0
+  const weekChoices = useMemo(() => {
+    const known = new Set(weeks.map((week) => week.label))
+    const extras = Object.keys(weekCounts).filter((label) => !known.has(label))
+    return [...weeks, ...extras.map((label) => ({ value: label, label }))]
+  }, [weekCounts, weeks])
+  const selectedCountWeek = weekChoices.some((week) => week.label === countWeek) ? countWeek : weeks[0]?.label || ''
+  const selectedWeekCount = weekCounts[selectedCountWeek] || 0
 
   const visible = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -280,7 +286,30 @@ export default function Admin() {
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-4">
-          <Stat icon={CalendarDays} label="This week" value={`${currentWeekCount} / ${WEEKLY_BOOKING_LIMIT}`} note="Tuesday–Sunday cap" />
+          <div className="rounded-2xl bg-white p-5 shadow-[var(--shadow-card)]">
+            <CalendarDays className="h-5 w-5 text-secondary" />
+            <label className="mt-3 block text-xs font-bold tracking-wider text-muted uppercase">
+              Bookings in week
+              <select
+                className="mt-2 w-full rounded-lg border border-outline/70 bg-surface px-2 py-2 text-xs font-semibold tracking-normal text-primary normal-case"
+                value={selectedCountWeek}
+                onChange={(e) => {
+                  setCountWeek(e.target.value)
+                  setWeekFilter(e.target.value)
+                }}
+              >
+                {weekChoices.map((week) => (
+                  <option key={week.value} value={week.label}>
+                    {week.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <p className="font-headline mt-3 text-2xl font-bold text-primary">
+              {selectedWeekCount} / {WEEKLY_BOOKING_LIMIT}
+            </p>
+            <p className="mt-1 text-xs text-muted">Tuesday–Sunday cap</p>
+          </div>
           <Stat icon={CircleDollarSign} label="Month estimate" value={formatCedis(monthlyEstimate)} note="Quoted amounts this month" />
           <Stat icon={CircleDollarSign} label="Month earned" value={formatCedis(monthlyEarned)} note="Marked as paid" />
           <Stat icon={ClipboardList} label="Jobs completed" value={String(doneCount)} note="Done or paid in total" />
@@ -304,9 +333,16 @@ export default function Admin() {
               </option>
             ))}
           </select>
-          <select className={fieldClass + ' md:w-64'} value={weekFilter} onChange={(e) => setWeekFilter(e.target.value)}>
+          <select
+            className={fieldClass + ' md:w-64'}
+            value={weekFilter}
+            onChange={(e) => {
+              setWeekFilter(e.target.value)
+              if (e.target.value !== 'all') setCountWeek(e.target.value)
+            }}
+          >
             <option value="all">All weeks (next 3 months)</option>
-            {weeks.map((week) => (
+            {weekChoices.map((week) => (
               <option key={week.value} value={week.label}>
                 {week.label} ({weekCounts[week.label] || 0}/{WEEKLY_BOOKING_LIMIT})
               </option>
@@ -360,7 +396,10 @@ export default function Admin() {
                       </span>
                     ) : null}
                   </td>
-                  <td className="px-4 py-3 text-muted">{job.service || job.tankSize || '—'}</td>
+                  <td className="px-4 py-3 text-muted">
+                    <p>{job.service || 'Polytank cleaning'}</p>
+                    <p className="text-xs">{job.tankSize || 'Size not given'}</p>
+                  </td>
                   <td className="px-4 py-3">
                     <span className="rounded-full bg-surface px-2 py-1 text-xs font-semibold text-primary">
                       {statusLabel(job.status)}

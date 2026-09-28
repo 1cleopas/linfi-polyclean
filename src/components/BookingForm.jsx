@@ -33,16 +33,9 @@ function sizeFieldCount(value) {
   return Math.min(tankCount(value), MAX_TANK_SIZE_FIELDS)
 }
 
-function bookedTankSize(values) {
-  const count = sizeFieldCount(values.tanks)
-  const sizes = Array.from({ length: count }, (_, index) => values.tankSizesByTank?.[index] || '')
-  if (tankCount(values.tanks) >= 2) {
-    return sizes
-      .map((size, index) => (size ? `Tank ${index + 1}: ${size}` : ''))
-      .filter(Boolean)
-      .join('; ')
-  }
-  return sizes[0] || values.tankSize || ''
+function tankSizeList(values) {
+  const count = tankCount(values.tanks)
+  return Array.from({ length: count }, (_, index) => values.tankSizesByTank?.[index] || '')
 }
 
 const AUTO_PREFIX = 'I would like: '
@@ -74,7 +67,9 @@ function bookingMessage(values) {
     `Location: ${values.location}`,
     values.service ? `Service: ${values.service}` : '',
     values.tankType ? `Tank type: ${values.tankType}` : '',
-    bookedTankSize(values) ? `Tank size: ${bookedTankSize(values)}` : '',
+    tankSizeList(values)
+      .map((size, index) => `Tank ${index + 1}${size ? `: ${size}` : ''}`)
+      .join('\n'),
     values.tanks ? `Number of tanks: ${values.tanks}` : '',
     values.week ? `Preferred week: ${values.week} (working days ${WORK_DAYS}, up to ${WEEKLY_BOOKING_LIMIT} bookings)` : '',
     values.time ? `Preferred time: ${values.time}` : '',
@@ -153,7 +148,8 @@ export default function BookingForm() {
         location: values.location,
         service: values.service,
         tankType: values.tankType,
-        tankSize: bookedTankSize(values),
+        tankSize: tankSizeList(values)[0] || '',
+        tankSizes: tankSizeList(values),
         tanks: values.tanks,
         week: values.week,
         time: values.time,
@@ -185,6 +181,7 @@ export default function BookingForm() {
         <h3 className="font-headline mt-4 text-2xl font-bold text-primary">Request received</h3>
         <p className="mx-auto mt-3 max-w-lg text-muted">
           Thank you, {values.fullName.split(' ')[0] || 'there'}. Your booking has been saved for our team.
+          {tankCount(values.tanks) > 1 ? ` Each tank was saved as its own booking.` : ''}
           {hasWhatsApp()
             ? ' If WhatsApp did not open, use the button below to send the same details.'
             : ' Copy the request below and send it to LINFI POLYCLEAN.'}
@@ -262,6 +259,7 @@ export default function BookingForm() {
       <label className="flex flex-col gap-1.5 text-xs font-semibold tracking-wide text-muted uppercase">
         Number of Tanks
         <input className={fieldClass} name="tanks" value={values.tanks} onChange={onChange} inputMode="numeric" placeholder="e.g. 1" />
+        <span className="font-medium normal-case text-muted">Each tank is saved as its own booking.</span>
       </label>
       {sizeFieldCount(values.tanks) < 2 ? (
         <label className="flex flex-col gap-1.5 text-xs font-semibold tracking-wide text-muted uppercase">
@@ -310,7 +308,7 @@ export default function BookingForm() {
         </select>
         {errors.week && <span className="font-medium normal-case text-red-600">{errors.week}</span>}
         <span className="font-medium normal-case text-muted">
-          We take up to {WEEKLY_BOOKING_LIMIT} bookings each week. Working days are {WORK_DAYS} (Monday off).
+          We take up to {WEEKLY_BOOKING_LIMIT} bookings each week, and each tank counts as one booking. Working days are {WORK_DAYS} (Monday off).
         </span>
       </label>
       <label className="flex flex-col gap-1.5 text-xs font-semibold tracking-wide text-muted uppercase">

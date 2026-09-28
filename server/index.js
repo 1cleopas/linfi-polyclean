@@ -1,7 +1,7 @@
 import express from 'express'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { join } from 'node:path'
-import { countWeekBookings, createJob, deleteJob, listJobs, updateJob } from './store.js'
+import { countWeekBookings, createJob, createJobs, deleteJob, listJobs, updateJob } from './store.js'
 import { WEEKLY_BOOKING_LIMIT } from '../src/lib/weeks.js'
 
 const app = express()
@@ -55,11 +55,29 @@ app.post('/api/bookings', (req, res) => {
   }
 
   try {
-    const job = createJob({ ...body, source: 'website', status: 'new' })
-    console.log(`Booking saved: ${job.fullName} (${job.week})`)
+    const requested = Number.parseInt(String(body.tanks || '').trim(), 10)
+    const tankCount = Number.isFinite(requested) && requested > 1 ? requested : 1
+    if (tankCount > WEEKLY_BOOKING_LIMIT) {
+      res.status(400).json({ error: `One booking can include up to ${WEEKLY_BOOKING_LIMIT} tanks.` })
+      return
+    }
+
+    const sizes = Array.isArray(body.tankSizes) ? body.tankSizes : []
+    const jobs = createJobs(
+      Array.from({ length: tankCount }, (_, index) => ({
+        ...body,
+        source: 'website',
+        status: 'new',
+        tanks: '1',
+        tankSize: String(sizes[index] || (tankCount === 1 ? body.tankSize : '') || '').trim(),
+        extra: [tankCount > 1 ? `Tank ${index + 1} of ${tankCount}.` : '', body.extra].filter(Boolean).join(' '),
+      })),
+    )
+    console.log(`Booking saved: ${jobs[0].fullName} (${jobs.length} tank${jobs.length === 1 ? '' : 's'}, ${jobs[0].week})`)
     res.status(201).json({
-      job,
-      weekCount: countWeekBookings(job.week),
+      job: jobs[0],
+      jobs,
+      weekCount: countWeekBookings(jobs[0].week),
       weekLimit: WEEKLY_BOOKING_LIMIT,
     })
   } catch (error) {
