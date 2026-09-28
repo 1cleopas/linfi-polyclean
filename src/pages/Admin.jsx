@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { CalendarDays, CircleDollarSign, ClipboardList, LogOut, Plus, ReceiptText, Search } from 'lucide-react'
 import { services, tankSizes, tankTypes } from '../data/content'
-import { workWeeksForMonths, WEEKLY_BOOKING_LIMIT } from '../lib/weeks'
+import { nextCleaningDate, workWeeksForMonths, WEEKLY_BOOKING_LIMIT } from '../lib/weeks'
 import {
   adminLogin,
   createAdminJob,
@@ -54,6 +54,12 @@ function jobMonth(job) {
 
 function statusLabel(value) {
   return STATUSES.find((item) => item.value === value)?.label || value
+}
+
+function formatNextCleaning(week) {
+  const next = nextCleaningDate(week)
+  if (!next) return ''
+  return next.toLocaleDateString('en-GH', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 export default function Admin() {
@@ -464,6 +470,11 @@ export default function Admin() {
                     </option>
                   ))}
                 </select>
+                {formatNextCleaning(adding ? draft.week : selected.week) && (
+                  <span className="mt-1 block text-xs font-medium tracking-normal text-primary normal-case">
+                    Next cleaning date: {formatNextCleaning(adding ? draft.week : selected.week)}
+                  </span>
+                )}
               </label>
               <label className="text-xs font-semibold tracking-wide text-muted uppercase">
                 Service

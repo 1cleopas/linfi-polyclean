@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { company } from '../data/content'
+import { nextCleaningDate } from '../lib/weeks'
 import { getAdminJob, getAdminToken } from '../lib/api'
 import { buildReceiptPdf } from '../lib/receiptPdf'
 import Button from '../components/Button'
@@ -73,7 +74,7 @@ export default function Receipt() {
     ['Service', job.service || 'Polytank cleaning'],
     ['Tank size', job.tankSize],
     ['Number of tanks', job.tanks],
-    ['Preferred week', job.week],
+    ['Next cleaning date', nextCleaningDate(job.week) ? formatDate(nextCleaningDate(job.week)) : ''],
   ].filter(([, value]) => value)
 
   async function sendPdf() {

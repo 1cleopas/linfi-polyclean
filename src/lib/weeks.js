@@ -20,6 +20,28 @@ function formatDay(date) {
   return `${WEEKDAY_SHORT[date.getDay()]} ${date.getDate()} ${MONTH_SHORT[date.getMonth()]} ${date.getFullYear()}`
 }
 
+const MONTH_INDEX = Object.fromEntries(MONTH_SHORT.map((month, index) => [month, index]))
+
+/** First day of the booked work week, for example Tue 29 Sep 2026. */
+export function firstCleaningDate(weekLabel) {
+  const match = String(weekLabel || '').match(/[A-Za-z]{3}\s+(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/)
+  if (!match) return null
+  const month = MONTH_INDEX[match[2]]
+  if (month == null) return null
+  const date = new Date(Number(match[3]), month, Number(match[1]))
+  if (Number.isNaN(date.getTime()) || date.getMonth() !== month) return null
+  return date
+}
+
+/** Three months after the first cleaning day. */
+export function nextCleaningDate(weekLabel) {
+  const first = firstCleaningDate(weekLabel)
+  if (!first) return null
+  const next = new Date(first)
+  next.setMonth(next.getMonth() + 3)
+  return next
+}
+
 function isoDate(date) {
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
