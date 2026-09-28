@@ -108,7 +108,7 @@ export default function Receipt() {
     setShareNote('')
     const digits = whatsappDigits(job)
     const filename = `${number}.pdf`
-    const blob = buildReceiptPdf({
+    const blob = await buildReceiptPdf({
       number,
       date: formatDate(job.updatedAt || job.createdAt),
       paid,
@@ -164,7 +164,13 @@ export default function Receipt() {
           </Button>
         </div>
 
-        <article className="rounded-3xl bg-white p-8 shadow-[var(--shadow-card)] print:rounded-none print:shadow-none">
+        <article className="relative overflow-hidden rounded-3xl bg-white p-8 shadow-[var(--shadow-card)] print:rounded-none print:shadow-none">
+          <img
+            src="/logo.png"
+            alt=""
+            className="pointer-events-none absolute top-1/2 left-1/2 w-[78%] max-w-md -translate-x-1/2 -translate-y-1/2 opacity-25 select-none"
+          />
+          <div className="relative">
           <div className="flex items-start justify-between gap-4 border-b border-outline/40 pb-6">
             <div>
               <img src="/logo.png" alt="" className="h-16 w-16 rounded-xl object-contain" />
@@ -205,6 +211,7 @@ export default function Receipt() {
           <p className="mt-6 text-xs leading-5 text-muted">
             Prices may vary due to location and tank position. This receipt covers every tank booked for this customer in the same week.
           </p>
+          </div>
         </article>
       </div>
     </main>
