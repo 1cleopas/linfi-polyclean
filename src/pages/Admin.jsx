@@ -75,6 +75,23 @@ function leadReceiptId(job, allJobs) {
   return lead?.id || job.id
 }
 
+const PRICE_LIST = [
+  { size: '500L – 1,500L', amount: 300 },
+  { size: '1,501L – 2,500L', amount: 400 },
+  { size: '2,501L – 3,500L', amount: 450 },
+  { size: '3,501L – 4,500L', amount: 550 },
+  { size: '4,501L – 5,500L', amount: 600 },
+  { size: '5,501L – 6,500L', amount: 650 },
+  { size: '6,501L – 7,500L', amount: 700 },
+  { size: '7,501L – 8,500L', amount: 750 },
+  { size: '8,501L – 9,500L', amount: 800 },
+  { size: '10,000L and above', amount: 900 },
+]
+
+function priceForSize(size) {
+  return PRICE_LIST.find((item) => item.size === size)?.amount
+}
+
 export default function Admin() {
   const [tokenReady, setTokenReady] = useState(Boolean(getAdminToken()))
   const [password, setPassword] = useState('')
@@ -334,6 +351,20 @@ export default function Admin() {
           <Stat icon={ClipboardList} label="Jobs completed" value={String(doneCount)} note="Done or paid in total" />
         </div>
 
+        <section className="mt-8 rounded-2xl bg-white p-5 shadow-[var(--shadow-card)]">
+          <h2 className="font-headline text-lg font-bold text-primary">Price list</h2>
+          <p className="mt-1 text-sm text-muted">Prices may vary due to location and tank position.</p>
+          <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+            {PRICE_LIST.map((item) => (
+              <li key={item.size} className="flex items-center justify-between gap-3 rounded-xl bg-surface px-3 py-2 text-sm">
+                <span className="text-primary">{item.size}</span>
+                <span className="font-semibold text-secondary">{formatCedis(item.amount)}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-sm text-muted">Add GH₵50 for tanks above 2 storeys.</p>
+        </section>
+
         <div className="mt-8 flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-[var(--shadow-card)] md:flex-row md:items-center">
           <label className="relative flex-1">
             <Search className="absolute top-3 left-3 h-4 w-4 text-muted" />
@@ -537,6 +568,11 @@ export default function Admin() {
                     </option>
                   ))}
                 </select>
+                {priceForSize(adding ? draft.tankSize : selected.tankSize) != null && (
+                  <span className="mt-1 block text-xs font-medium tracking-normal text-primary normal-case">
+                    Base price: {formatCedis(priceForSize(adding ? draft.tankSize : selected.tankSize))}. Add GH₵50 above 2 storeys.
+                  </span>
+                )}
               </label>
               <label className="text-xs font-semibold tracking-wide text-muted uppercase">
                 Tank type
