@@ -62,6 +62,19 @@ function formatNextCleaning(week) {
   return next.toLocaleDateString('en-GH', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
+function customerKey(job) {
+  const name = String(job.fullName || '').trim().toLowerCase()
+  const phone = String(job.phone || job.whatsapp || '').replace(/\D/g, '')
+  return `${name}|${phone}|${job.week || ''}`
+}
+
+function leadReceiptId(job, allJobs) {
+  const lead = allJobs
+    .filter((item) => item.status !== 'cancelled' && customerKey(item) === customerKey(job))
+    .sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)))[0]
+  return lead?.id || job.id
+}
+
 export default function Admin() {
   const [tokenReady, setTokenReady] = useState(Boolean(getAdminToken()))
   const [password, setPassword] = useState('')
@@ -386,7 +399,13 @@ export default function Admin() {
               </tr>
             </thead>
             <tbody className="divide-y divide-outline/30">
-              {visible.map((job) => (
+              {(() => {
+                const shown = new Set()
+                return visible.map((job) => {
+                  const receiptId = leadReceiptId(job, jobs)
+                  const showReceipt = !shown.has(receiptId)
+                  if (showReceipt) shown.add(receiptId)
+                  return (
                 <tr key={job.id} className="cursor-pointer hover:bg-surface" onClick={() => setSelected(job)}>
                   <td className="px-4 py-3">
                     <p className="font-semibold text-primary">{job.fullName}</p>
@@ -413,19 +432,25 @@ export default function Admin() {
                   </td>
                   <td className="px-4 py-3 text-right font-semibold text-secondary">{formatCedis(job.amount)}</td>
                   <td className="px-4 py-3 text-right">
-                    <a
-                      href={`/admin/receipt/${job.id}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 rounded-full bg-surface px-3 py-1.5 text-xs font-semibold text-primary hover:bg-surface-low"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <ReceiptText className="h-3.5 w-3.5" aria-hidden="true" />
-                      Receipt
-                    </a>
+                    {showReceipt ? (
+                      <a
+                        href={`/admin/receipt/${receiptId}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 rounded-full bg-surface px-3 py-1.5 text-xs font-semibold text-primary hover:bg-surface-low"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <ReceiptText className="h-3.5 w-3.5" aria-hidden="true" />
+                        Receipt
+                      </a>
+                    ) : (
+                      <span className="text-xs text-muted">On this receipt</span>
+                    )}
                   </td>
                 </tr>
-              ))}
+                  )
+                })
+              })()}
               {visible.length === 0 && (
                 <tr>
                   <td className="px-4 py-10 text-center text-muted" colSpan={6}>
@@ -567,7 +592,7 @@ export default function Admin() {
                 Close
               </Button>
               {!adding && selected && (
-                <Button type="button" variant="outline" href={`/admin/receipt/${selected.id}`} target="_blank">
+                <Button type="button" variant="outline" href={`/admin/receipt/${leadReceiptId(selected, jobs)}`} target="_blank">
                   Receipt
                 </Button>
               )}

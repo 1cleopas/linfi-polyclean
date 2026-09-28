@@ -40,7 +40,7 @@ export function buildReceiptPdf({ number, date, paid, rows, amount, company }) {
   commands.push(
     line('Prices may vary due to location and tank position.', 10, 48, y, 'F2'),
   )
-  commands.push(line('This receipt confirms the amount recorded for this job.', 10, 48, y - 16, 'F2'))
+  commands.push(line('This receipt covers every tank booked for this customer.', 10, 48, y - 16, 'F2'))
 
   const stream = commands.join('\n')
   const objects = [

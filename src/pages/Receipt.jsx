@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { company } from '../data/content'
 import { nextCleaningDate } from '../lib/weeks'
-import { getAdminJob, getAdminToken } from '../lib/api'
+import { getAdminToken, listAdminJobs } from '../lib/api'
 import { buildReceiptPdf } from '../lib/receiptPdf'
 import Button from '../components/Button'
 
@@ -33,9 +33,23 @@ function whatsappDigits(job) {
   return raw
 }
 
+function customerKey(job) {
+  const name = String(job.fullName || '').trim().toLowerCase()
+  const phone = String(job.phone || job.whatsapp || '').replace(/\D/g, '')
+  return `${name}|${phone}|${job.week || ''}`
+}
+
+function combinedAmount(jobs) {
+  const amounts = jobs
+    .map((job) => job.amount)
+    .filter((amount) => amount != null && amount !== '' && !Number.isNaN(Number(amount)))
+  if (amounts.length === 0) return null
+  return amounts.reduce((sum, amount) => sum + Number(amount), 0)
+}
+
 export default function Receipt() {
   const { id } = useParams()
-  const [job, setJob] = useState(null)
+  const [jobs, setJobs] = useState(null)
   const [error, setError] = useState('')
   const [shareNote, setShareNote] = useState('')
 
@@ -44,8 +58,19 @@ export default function Receipt() {
       window.location.replace('/admin')
       return undefined
     }
-    getAdminJob(id)
-      .then((data) => setJob(data.job))
+    listAdminJobs()
+      .then((data) => {
+        const all = data.jobs || []
+        const current = all.find((item) => item.id === id)
+        if (!current) {
+          setError('Job not found.')
+          return
+        }
+        const group = all
+          .filter((item) => item.status !== 'cancelled' && customerKey(item) === customerKey(current))
+          .sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)))
+        setJobs(group.length ? group : [current])
+      })
       .catch((err) => setError(err.message))
     return undefined
   }, [id])
@@ -61,19 +86,21 @@ export default function Receipt() {
     )
   }
 
-  if (!job) {
+  if (!jobs) {
     return <main className="px-4 py-16 text-center text-muted">Loading receipt…</main>
   }
 
+  const job = jobs[0]
   const number = receiptNumber(job)
-  const paid = job.status === 'paid'
+  const paid = jobs.every((item) => item.status === 'paid')
+  const amount = combinedAmount(jobs)
   const rows = [
     ['Customer', job.fullName],
     ['Phone', job.phone],
     ['Location', job.location],
-    ['Service', job.service || 'Polytank cleaning'],
-    ['Tank size', job.tankSize],
-    ['Number of tanks', job.tanks],
+    ['Service', [...new Set(jobs.map((item) => item.service || 'Polytank cleaning'))].join(', ')],
+    ['Number of tanks', String(jobs.length)],
+    ...jobs.map((item, index) => [jobs.length > 1 ? `Tank ${index + 1}` : 'Tank size', item.tankSize || 'Size not given']),
     ['Next cleaning date', nextCleaningDate(job.week) ? formatDate(nextCleaningDate(job.week)) : ''],
   ].filter(([, value]) => value)
 
@@ -86,11 +113,11 @@ export default function Receipt() {
       date: formatDate(job.updatedAt || job.createdAt),
       paid,
       rows,
-      amount: formatCedis(job.amount).replace('GH₵', 'GHS '),
+      amount: formatCedis(amount).replace('GH₵', 'GHS '),
       company,
     })
     const file = new File([blob], filename, { type: 'application/pdf' })
-    const caption = `Receipt ${number} for ${job.fullName}`
+    const caption = `Receipt ${number} for ${job.fullName}${jobs.length > 1 ? ` (${jobs.length} tanks)` : ''}`
 
     // Share the PDF first. Opening wa.me before this leaves an empty chat,
     // because a WhatsApp link cannot carry a file.
@@ -172,11 +199,11 @@ export default function Receipt() {
 
           <div className="mt-6 flex items-center justify-between rounded-2xl bg-surface px-5 py-4">
             <p className="text-sm font-semibold text-muted">Amount</p>
-            <p className="font-headline text-2xl font-bold text-primary">{formatCedis(job.amount)}</p>
+            <p className="font-headline text-2xl font-bold text-primary">{formatCedis(amount)}</p>
           </div>
 
           <p className="mt-6 text-xs leading-5 text-muted">
-            Prices may vary due to location and tank position. This receipt confirms the amount recorded for this job.
+            Prices may vary due to location and tank position. This receipt covers every tank booked for this customer in the same week.
           </p>
         </article>
       </div>
