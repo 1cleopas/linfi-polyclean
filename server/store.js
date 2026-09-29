@@ -27,6 +27,16 @@ function writeJobs(jobs) {
   writeFileSync(filePath, JSON.stringify(jobs, null, 2), 'utf8')
 }
 
+export function replaceAllJobs(jobs) {
+  if (!Array.isArray(jobs)) throw invalidError('A jobs list is required.')
+  writeJobs(jobs)
+  return listJobs()
+}
+
+export function jobsFilePath() {
+  return filePath
+}
+
 export function listJobs() {
   return readJobs().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
 }

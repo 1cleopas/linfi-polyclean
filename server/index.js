@@ -1,7 +1,7 @@
 import express from 'express'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { join } from 'node:path'
-import { countWeekBookings, createJob, createJobs, deleteJob, listJobs, updateJob } from './store.js'
+import { countWeekBookings, createJob, createJobs, deleteJob, jobsFilePath, listJobs, replaceAllJobs, updateJob } from './store.js'
 import { WEEKLY_BOOKING_LIMIT } from '../src/lib/weeks.js'
 
 const app = express()
@@ -105,6 +105,14 @@ app.get('/api/admin/jobs', requireAdmin, (_req, res) => {
   res.json({ jobs: listJobs(), weekLimit: WEEKLY_BOOKING_LIMIT })
 })
 
+app.put('/api/admin/jobs', requireAdmin, (req, res) => {
+  try {
+    res.json({ jobs: replaceAllJobs(req.body?.jobs) })
+  } catch (error) {
+    res.status(400).json({ error: error.message })
+  }
+})
+
 app.get('/api/admin/jobs/:id', requireAdmin, (req, res) => {
   const job = listJobs().find((item) => item.id === req.params.id)
   if (!job) {
@@ -152,4 +160,5 @@ app.get(/.*/, (_req, res) => {
 
 app.listen(port, '0.0.0.0', () => {
   console.log(`LINFI POLYCLEAN server listening on 0.0.0.0:${port}`)
+  console.log(`Job file: ${jobsFilePath()}`)
 })
