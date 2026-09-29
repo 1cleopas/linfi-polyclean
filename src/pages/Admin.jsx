@@ -111,6 +111,14 @@ export default function Admin() {
   const weeks = useMemo(() => workWeeksForMonths(3), [])
   const requestSeq = useRef(0)
 
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="robots"]')
+    if (!meta) return undefined
+    const previous = meta.getAttribute('content')
+    meta.setAttribute('content', 'noindex, nofollow')
+    return () => meta.setAttribute('content', previous || 'index, follow')
+  }, [])
+
   async function refresh() {
     const seq = ++requestSeq.current
     try {

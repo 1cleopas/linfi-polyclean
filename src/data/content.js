@@ -7,7 +7,7 @@ export const WHATSAPP_MESSAGE =
    whatsappDigits should be country code + number with no + or spaces,
    e.g. 233241234567
    ------------------------------------------------------------------ */
-export const siteUrl = 'https://linfipolyclean.com'
+export const siteUrl = 'https://linfi-polyclean-live.onrender.com'
 
 export const company = {
   name: 'LINFI POLYCLEAN',

@@ -54,6 +54,15 @@ export default function Receipt() {
   const [shareNote, setShareNote] = useState('')
 
   useEffect(() => {
+    const meta = document.querySelector('meta[name="robots"]')
+    const previous = meta?.getAttribute('content')
+    if (meta) meta.setAttribute('content', 'noindex, nofollow')
+    return () => {
+      if (meta) meta.setAttribute('content', previous || 'index, follow')
+    }
+  }, [])
+
+  useEffect(() => {
     if (!getAdminToken()) {
       window.location.replace('/admin')
       return undefined
