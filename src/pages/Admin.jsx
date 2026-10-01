@@ -232,8 +232,11 @@ export default function Admin() {
     setSubmitting(true)
     try {
       const data = await adminLogin(password)
+      if (!data.challengeId) {
+        setError('The sign-in code could not be started. Try again.')
+        return
+      }
       setChallengeId(data.challengeId)
-      setPassword('')
       setCode('')
     } catch (err) {
       setError(err.message)
@@ -309,50 +312,39 @@ export default function Admin() {
           <p className="text-xs font-bold tracking-[0.2em] text-secondary uppercase">Manager</p>
           <h1 className="font-headline mt-2 text-2xl font-bold text-primary">LINFI POLYCLEAN</h1>
           <p className="mt-2 text-sm text-muted">
-            {challengeId
-              ? 'Enter the 6-digit code from the recovery email. It expires in 10 minutes.'
-              : 'Every sign-in needs the manager password and a one-time code sent to the recovery email. Do not share this page with customers.'}
+            Every sign-in needs the manager password and a 6-digit code sent to the recovery email. Tap Send sign-in code first, then enter the code from the email.
           </p>
-          {challengeId ? (
-            <label className="mt-6 block text-sm font-semibold text-primary">
-              Sign-in code
-              <input
-                className="mt-1 w-full rounded-lg border border-outline/70 bg-surface px-3 py-3 tracking-[0.3em]"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              />
-            </label>
-          ) : (
-            <label className="mt-6 block text-sm font-semibold text-primary">
-              Password
-              <input
-                className="mt-1 w-full rounded-lg border border-outline/70 bg-surface px-3 py-3"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
-              />
-            </label>
-          )}
+          <label className="mt-6 block text-sm font-semibold text-primary">
+            Password
+            <input
+              className="mt-1 w-full rounded-lg border border-outline/70 bg-surface px-3 py-3"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+            />
+          </label>
+          <label className="mt-4 block text-sm font-semibold text-primary">
+            Sign-in code
+            <input
+              className="mt-1 w-full rounded-lg border border-outline/70 bg-surface px-3 py-3 tracking-[0.3em]"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="6 digits from email"
+            />
+          </label>
           {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-          <Button type="submit" fullWidth className="mt-6" disabled={submitting}>
-            {challengeId ? 'Open dashboard' : 'Send sign-in code'}
-          </Button>
-          {challengeId && (
-            <button
-              type="button"
-              className="mt-4 w-full text-sm font-semibold text-secondary"
-              onClick={() => {
-                setChallengeId('')
-                setCode('')
-                setError('')
-              }}
-            >
-              Use the password again
-            </button>
-          )}
+          {challengeId && <p className="mt-3 text-sm text-muted">A code was sent. It expires in 10 minutes.</p>}
+          <div className="mt-6 flex flex-col gap-3">
+            <Button type="button" fullWidth disabled={submitting} onClick={onLogin}>
+              Send sign-in code
+            </Button>
+            <Button type="submit" fullWidth disabled={submitting || !challengeId}>
+              Open dashboard
+            </Button>
+          </div>
         </form>
       </main>
     )
