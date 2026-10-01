@@ -11,6 +11,7 @@ import {
   listAdminJobs,
   setAdminToken,
   updateAdminJob,
+  wakeAdminApi,
 } from '../lib/api'
 import Button from '../components/Button'
 
@@ -122,6 +123,12 @@ export default function Admin() {
     meta.setAttribute('content', 'noindex, nofollow')
     return () => meta.setAttribute('content', previous || 'index, follow')
   }, [])
+
+  useEffect(() => {
+    if (tokenReady) return undefined
+    wakeAdminApi()
+    return undefined
+  }, [tokenReady])
 
   async function refresh() {
     const seq = ++requestSeq.current
@@ -336,7 +343,11 @@ export default function Admin() {
             />
           </label>
           {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-          {challengeId && <p className="mt-3 text-sm text-muted">A code was sent. It expires in 10 minutes.</p>}
+          {challengeId && (
+            <p className="mt-3 text-sm text-muted">
+              A code is on its way to the recovery email. It can take a few seconds to arrive, and it expires in 10 minutes.
+            </p>
+          )}
           <div className="mt-6 flex flex-col gap-3">
             <Button type="button" fullWidth disabled={submitting} onClick={onLogin}>
               Send sign-in code

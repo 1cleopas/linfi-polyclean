@@ -114,7 +114,7 @@ app.post('/api/bookings', (req, res) => {
   }
 })
 
-app.post('/api/admin/login', async (req, res) => {
+app.post('/api/admin/login', (req, res) => {
   const ip = clientIp(req)
   if (tooMany(`login:${ip}`, { max: 8, windowMs: 15 * 60 * 1000 })) {
     res.status(429).json({ error: 'Too many sign-in attempts. Wait a few minutes and try again.' })
@@ -125,7 +125,7 @@ app.post('/api/admin/login', async (req, res) => {
     return
   }
   try {
-    const { challengeId } = await issueSignInCode()
+    const { challengeId } = issueSignInCode()
     res.json({ challengeId })
   } catch (error) {
     res.status(error.code === 'RATE' ? 429 : 503).json({ error: error.message })

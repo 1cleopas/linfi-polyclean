@@ -41,6 +41,10 @@ export function adminLogin(password) {
   return request('/api/admin/login', { method: 'POST', body: { password } })
 }
 
+export function wakeAdminApi() {
+  return fetch('/api/health').catch(() => null)
+}
+
 export function adminLoginCode(challengeId, code) {
   return request('/api/admin/login/code', { method: 'POST', body: { challengeId, code } })
 }
