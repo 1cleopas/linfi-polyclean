@@ -334,12 +334,17 @@ export default function Admin() {
               />
               <button
                 type="button"
-                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-muted hover:text-primary"
+                className="absolute inset-y-0 right-1 my-1 flex w-11 items-center justify-center rounded-lg text-primary hover:bg-surface-high"
                 onClick={() => setShowPassword((open) => !open)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
                 aria-pressed={showPassword}
+                title={showPassword ? 'Hide password' : 'Show password'}
               >
-                {showPassword ? <EyeOff className="h-5 w-5" aria-hidden="true" /> : <Eye className="h-5 w-5" aria-hidden="true" />}
+                {showPassword ? (
+                  <EyeOff className="h-6 w-6" strokeWidth={2.25} aria-hidden="true" />
+                ) : (
+                  <Eye className="h-6 w-6" strokeWidth={2.25} aria-hidden="true" />
+                )}
               </button>
             </span>
           </label>
