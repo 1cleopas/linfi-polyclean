@@ -1,9 +1,27 @@
 import express from 'express'
 import { createHmac, timingSafeEqual } from 'node:crypto'
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { checkSignInCode, issueSignInCode } from './otp.js'
 import { clientIp, passwordMatches, securityHeaders, tooMany } from './security.js'
 import { countWeekBookings, createJob, createJobs, deleteJob, jobsFilePath, listJobs, replaceAllJobs, updateJob } from './store.js'
+
+try {
+  for (const raw of readFileSync(join(process.cwd(), '.env'), 'utf8').split(/\r?\n/)) {
+    const line = raw.trim()
+    if (!line || line.startsWith('#')) continue
+    const cut = line.indexOf('=')
+    if (cut === -1) continue
+    const key = line.slice(0, cut).trim()
+    let value = line.slice(cut + 1).trim()
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1)
+    }
+    if (!process.env[key]) process.env[key] = value
+  }
+} catch {
+  // No local .env file.
+}
 
 const app = express()
 const adminPassword = process.env.ADMIN_PASSWORD || 'linfi-admin'

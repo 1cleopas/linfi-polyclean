@@ -76,7 +76,7 @@ export function checkSignInCode(challengeId, code) {
 async function deliver(code) {
   const to = recoveryEmail()
   const user = process.env.SMTP_USER
-  const pass = process.env.SMTP_PASS
+  const pass = String(process.env.SMTP_PASS || '').replace(/\s/g, '')
   if (!user || !pass) {
     if (process.env.NODE_ENV === 'production' || process.env.RENDER === 'true') {
       const error = new Error('The sign-in code could not be sent.')
