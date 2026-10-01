@@ -4,6 +4,7 @@ import { services, tankSizes, tankTypes } from '../data/content'
 import { nextCleaningDate, workWeeksForMonths } from '../lib/weeks'
 import {
   adminLogin,
+  adminLoginCode,
   createAdminJob,
   deleteAdminJob,
   getAdminToken,
@@ -95,6 +96,10 @@ function priceForSize(size) {
 export default function Admin() {
   const [tokenReady, setTokenReady] = useState(Boolean(getAdminToken()))
   const [password, setPassword] = useState('')
+  const [challengeId, setChallengeId] = useState('')
+  const [setupSecret, setSetupSecret] = useState('')
+  const [code, setCode] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const [jobs, setJobs] = useState([])
   const [error, setError] = useState('')
   const [loadError, setLoadError] = useState('')
@@ -225,13 +230,45 @@ export default function Admin() {
   async function onLogin(e) {
     e.preventDefault()
     setError('')
+    setSubmitting(true)
     try {
       const data = await adminLogin(password)
-      setAdminToken(data.token)
-      setTokenReady(true)
+      if (data.token) {
+        setAdminToken(data.token)
+        setTokenReady(true)
+        setPassword('')
+        return
+      }
+      setChallengeId(data.challengeId)
+      setSetupSecret(data.setup ? data.secret : '')
       setPassword('')
+      setCode('')
     } catch (err) {
       setError(err.message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function onCode(e) {
+    e.preventDefault()
+    setError('')
+    setSubmitting(true)
+    try {
+      const data = await adminLoginCode(challengeId, code)
+      setAdminToken(data.token)
+      setTokenReady(true)
+      setChallengeId('')
+      setSetupSecret('')
+      setCode('')
+    } catch (err) {
+      setError(err.message)
+      if (/expired|password again/i.test(err.message)) {
+        setChallengeId('')
+        setSetupSecret('')
+      }
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -278,24 +315,60 @@ export default function Admin() {
   if (!tokenReady) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-surface px-4">
-        <form onSubmit={onLogin} className="w-full max-w-md rounded-3xl bg-white p-8 shadow-[var(--shadow-card)]">
+        <form onSubmit={challengeId ? onCode : onLogin} className="w-full max-w-md rounded-3xl bg-white p-8 shadow-[var(--shadow-card)]">
           <p className="text-xs font-bold tracking-[0.2em] text-secondary uppercase">Manager</p>
           <h1 className="font-headline mt-2 text-2xl font-bold text-primary">LINFI POLYCLEAN</h1>
-          <p className="mt-2 text-sm text-muted">Private manager login. Do not share this page or password with customers.</p>
-          <label className="mt-6 block text-sm font-semibold text-primary">
-            Password
-            <input
-              className="mt-1 w-full rounded-lg border border-outline/70 bg-surface px-3 py-3"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-            />
-          </label>
+          <p className="mt-2 text-sm text-muted">
+            {setupSecret
+              ? 'Open Authenticator, add an account, and type this key. Then enter the 6-digit code it shows.'
+              : challengeId
+                ? 'Enter the 6-digit code from Authenticator. It changes every 30 seconds.'
+                : 'Every sign-in needs the manager password and a one-time code from Authenticator. Do not share this page with customers.'}
+          </p>
+          {setupSecret ? (
+            <p className="mt-6 rounded-xl bg-surface px-4 py-3 text-center font-mono text-lg tracking-[0.2em] text-primary">{setupSecret}</p>
+          ) : null}
+          {challengeId ? (
+            <label className="mt-6 block text-sm font-semibold text-primary">
+              Authenticator code
+              <input
+                className="mt-1 w-full rounded-lg border border-outline/70 bg-surface px-3 py-3 tracking-[0.3em]"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              />
+            </label>
+          ) : (
+            <label className="mt-6 block text-sm font-semibold text-primary">
+              Password
+              <input
+                className="mt-1 w-full rounded-lg border border-outline/70 bg-surface px-3 py-3"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+              />
+            </label>
+          )}
           {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-          <Button type="submit" fullWidth className="mt-6">
-            Open dashboard
+          <Button type="submit" fullWidth className="mt-6" disabled={submitting}>
+            {challengeId ? 'Open dashboard' : 'Continue'}
           </Button>
+          {challengeId && (
+            <button
+              type="button"
+              className="mt-4 w-full text-sm font-semibold text-secondary"
+              onClick={() => {
+                setChallengeId('')
+                setSetupSecret('')
+                setCode('')
+                setError('')
+              }}
+            >
+              Use the password again
+            </button>
+          )}
         </form>
       </main>
     )

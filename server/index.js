@@ -1,6 +1,8 @@
 import express from 'express'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { join } from 'node:path'
+import { completeChallenge, createChallenge, groupedSecret, loadSecret } from './totp.js'
+import { clientIp, passwordMatches, securityHeaders, tooMany } from './security.js'
 import { countWeekBookings, createJob, createJobs, deleteJob, jobsFilePath, listJobs, replaceAllJobs, updateJob } from './store.js'
 
 const app = express()
@@ -8,7 +10,7 @@ const adminPassword = process.env.ADMIN_PASSWORD || 'linfi-admin'
 const SESSION_MS = 1000 * 60 * 60 * 24 * 14
 
 function signSession() {
-  const payload = Buffer.from(JSON.stringify({ exp: Date.now() + SESSION_MS })).toString('base64url')
+  const payload = Buffer.from(JSON.stringify({ exp: Date.now() + SESSION_MS, v: 3 })).toString('base64url')
   const sig = createHmac('sha256', adminPassword).update(payload).digest('base64url')
   return `${payload}.${sig}`
 }
@@ -23,13 +25,16 @@ function hasValidSession(token) {
   if (left.length !== right.length || !timingSafeEqual(left, right)) return false
   try {
     const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'))
-    return typeof data.exp === 'number' && data.exp > Date.now()
+    return data.v === 3 && typeof data.exp === 'number' && data.exp > Date.now()
   } catch {
     return false
   }
 }
 const port = Number(process.env.PORT) || 3000
 
+app.disable('x-powered-by')
+app.set('trust proxy', 1)
+app.use(securityHeaders)
 app.use(express.json({ limit: '200kb' }))
 
 function requireAdmin(req, res, next) {
@@ -47,6 +52,10 @@ app.get('/api/health', (_req, res) => {
 })
 
 app.post('/api/bookings', (req, res) => {
+  if (tooMany(`book:${clientIp(req)}`, { max: 8, windowMs: 15 * 60 * 1000 })) {
+    res.status(429).json({ error: 'Too many booking attempts. Please wait a few minutes.' })
+    return
+  }
   const body = req.body || {}
   if (!String(body.fullName || '').trim() || !String(body.phone || '').trim() || !String(body.location || '').trim() || !String(body.week || '').trim()) {
     res.status(400).json({ error: 'Name, phone, location and preferred week are required.' })
@@ -88,11 +97,40 @@ app.post('/api/bookings', (req, res) => {
 })
 
 app.post('/api/admin/login', (req, res) => {
-  if (String(req.body?.password || '') !== adminPassword) {
+  const ip = clientIp(req)
+  if (tooMany(`login:${ip}`, { max: 8, windowMs: 15 * 60 * 1000 })) {
+    res.status(429).json({ error: 'Too many sign-in attempts. Wait a few minutes and try again.' })
+    return
+  }
+  if (!passwordMatches(req.body?.password, adminPassword)) {
     res.status(401).json({ error: 'Wrong password.' })
     return
   }
-  res.json({ token: signSession() })
+  if (loadSecret()) {
+    const challenge = createChallenge('login')
+    res.json({ challengeId: challenge.challengeId })
+    return
+  }
+  const challenge = createChallenge('setup')
+  res.json({
+    challengeId: challenge.challengeId,
+    setup: true,
+    secret: groupedSecret(challenge.secret),
+  })
+})
+
+app.post('/api/admin/login/code', (req, res) => {
+  const ip = clientIp(req)
+  if (tooMany(`code:${ip}`, { max: 8, windowMs: 15 * 60 * 1000 })) {
+    res.status(429).json({ error: 'Too many sign-in attempts. Wait a few minutes and try again.' })
+    return
+  }
+  try {
+    completeChallenge(req.body?.challengeId, req.body?.code)
+    res.json({ token: signSession() })
+  } catch (error) {
+    res.status(401).json({ error: error.message })
+  }
 })
 
 app.get('/api/admin/jobs', requireAdmin, (_req, res) => {
