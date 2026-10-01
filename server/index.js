@@ -1,27 +1,10 @@
+import { rootDir } from './loadEnv.js'
 import express from 'express'
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { checkSignInCode, issueSignInCode } from './otp.js'
 import { clientIp, passwordMatches, securityHeaders, tooMany } from './security.js'
 import { countWeekBookings, createJob, createJobs, deleteJob, jobsFilePath, listJobs, replaceAllJobs, updateJob } from './store.js'
-
-try {
-  for (const raw of readFileSync(join(process.cwd(), '.env'), 'utf8').split(/\r?\n/)) {
-    const line = raw.trim()
-    if (!line || line.startsWith('#')) continue
-    const cut = line.indexOf('=')
-    if (cut === -1) continue
-    const key = line.slice(0, cut).trim()
-    let value = line.slice(cut + 1).trim()
-    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
-      value = value.slice(1, -1)
-    }
-    if (!process.env[key]) process.env[key] = value
-  }
-} catch {
-  // No local .env file.
-}
 
 const app = express()
 const adminPassword = process.env.ADMIN_PASSWORD || 'linfi-admin'
@@ -114,18 +97,18 @@ app.post('/api/bookings', (req, res) => {
   }
 })
 
-app.post('/api/admin/login', (req, res) => {
+app.post('/api/admin/login', async (req, res) => {
   const ip = clientIp(req)
-  if (tooMany(`login:${ip}`, { max: 8, windowMs: 15 * 60 * 1000 })) {
-    res.status(429).json({ error: 'Too many sign-in attempts. Wait a few minutes and try again.' })
-    return
-  }
   if (!passwordMatches(req.body?.password, adminPassword)) {
+    if (tooMany(`login:${ip}`, { max: 8, windowMs: 15 * 60 * 1000 })) {
+      res.status(429).json({ error: 'Too many sign-in attempts. Wait a few minutes and try again.' })
+      return
+    }
     res.status(401).json({ error: 'Wrong password.' })
     return
   }
   try {
-    const { challengeId } = issueSignInCode()
+    const { challengeId } = await issueSignInCode()
     res.json({ challengeId })
   } catch (error) {
     res.status(error.code === 'RATE' ? 429 : 503).json({ error: error.message })
@@ -197,7 +180,7 @@ app.delete('/api/admin/jobs/:id', requireAdmin, (req, res) => {
   res.status(204).end()
 })
 
-const dist = join(process.cwd(), 'dist')
+const dist = join(rootDir, 'dist')
 app.use(express.static(dist))
 app.get(/.*/, (_req, res) => {
   res.sendFile(join(dist, 'index.html'))

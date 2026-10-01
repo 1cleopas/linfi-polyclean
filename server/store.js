@@ -1,7 +1,10 @@
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs'
+import './loadEnv.js'
+import { mkdirSync, readFileSync, writeFileSync, existsSync, renameSync, unlinkSync } from 'node:fs'
 import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const dataDir = process.env.DATA_DIR || join(process.cwd(), 'data')
+const rootDir = fileURLToPath(new URL('..', import.meta.url))
+const dataDir = process.env.DATA_DIR || join(rootDir, 'data')
 const filePath = join(dataDir, 'jobs.json')
 
 function ensureFile() {
@@ -22,8 +25,20 @@ function readJobs() {
 }
 
 function writeJobs(jobs) {
-  ensureFile()
-  writeFileSync(filePath, JSON.stringify(jobs, null, 2), 'utf8')
+  mkdirSync(dirname(filePath), { recursive: true })
+  const payload = JSON.stringify(jobs, null, 2)
+  const tmp = `${filePath}.${process.pid}.tmp`
+  writeFileSync(tmp, payload, 'utf8')
+  try {
+    renameSync(tmp, filePath)
+  } catch {
+    writeFileSync(filePath, payload, 'utf8')
+    try {
+      unlinkSync(tmp)
+    } catch {
+      // The temp file can remain if Windows still has it open.
+    }
+  }
 }
 
 export function replaceAllJobs(jobs) {

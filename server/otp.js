@@ -8,14 +8,17 @@ const SEND_WINDOW_MS = 15 * 60 * 1000
 
 const challenges = new Map()
 const sendTimes = []
-let transport
 
 function secret() {
   return process.env.ADMIN_PASSWORD || 'linfi-admin'
 }
 
 function recoveryEmail() {
-  return process.env.ADMIN_OTP_EMAIL || 'obbolinus5050@gmail.com'
+  return String(process.env.ADMIN_OTP_EMAIL || 'obbolinus5050@gmail.com').trim()
+}
+
+function smtpUser() {
+  return String(process.env.SMTP_USER || '').trim()
 }
 
 function smtpPass() {
@@ -23,7 +26,7 @@ function smtpPass() {
 }
 
 function mailConfigured() {
-  return Boolean(process.env.SMTP_USER && smtpPass())
+  return Boolean(smtpUser() && smtpPass())
 }
 
 function isLive() {
@@ -40,67 +43,103 @@ function withinSendLimit() {
   return sendTimes.length < MAX_SENDS
 }
 
-function getTransport() {
-  if (transport) return transport
-  const port = Number(process.env.SMTP_PORT || 465)
-  transport = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port,
-    secure: port === 465,
-    pool: true,
-    maxConnections: 1,
-    auth: { user: process.env.SMTP_USER, pass: smtpPass() },
-    connectionTimeout: 8000,
-    greetingTimeout: 8000,
-    socketTimeout: 12000,
-  })
-  return transport
+function mailError(message) {
+  const error = new Error(message)
+  error.code = 'MAIL'
+  return error
 }
 
-export function issueSignInCode() {
+async function deliver(code) {
+  const to = recoveryEmail()
+  const user = smtpUser()
+  const pass = smtpPass()
+
+  if (!user || !pass) {
+    if (isLive()) {
+      throw mailError('Mail is not set up on the live site. In Render Environment add SMTP_USER and SMTP_PASS, save, then try again.')
+    }
+    console.log(`Manager sign-in code for ${to}: ${code}`)
+    return
+  }
+
+  const mail = {
+    from: `LINFI POLYCLEAN <${user}>`,
+    to,
+    subject: 'Manager sign-in code',
+    text: `Your LINFI POLYCLEAN manager sign-in code is ${code}.\n\nIt expires in 10 minutes.\n\nIf you did not try to open the dashboard, you can ignore this email.`,
+  }
+
+  const setups = [
+    {
+      service: 'gmail',
+      auth: { user, pass },
+      connectionTimeout: 10000,
+      greetingTimeout: 8000,
+      socketTimeout: 15000,
+    },
+    {
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      requireTLS: true,
+      auth: { user, pass },
+      connectionTimeout: 10000,
+      greetingTimeout: 8000,
+      socketTimeout: 15000,
+    },
+  ]
+
+  let lastMessage = ''
+  for (const options of setups) {
+    const transport = nodemailer.createTransport(options)
+    try {
+      await transport.sendMail(mail)
+      transport.close()
+      return
+    } catch (err) {
+      lastMessage = err?.message || String(err)
+      try {
+        transport.close()
+      } catch {
+        // Ignore close errors after a failed send.
+      }
+    }
+  }
+
+  console.error('Sign-in email failed:', lastMessage)
+  throw mailError('Gmail could not send the sign-in code. Check SMTP_USER and the 16-letter app password (no spaces), then try again.')
+}
+
+export async function issueSignInCode() {
   if (!withinSendLimit()) {
     const error = new Error('A code was just sent. Wait a few minutes before asking for another.')
     error.code = 'RATE'
     throw error
   }
-  if (!mailConfigured() && isLive()) {
-    const error = new Error('The sign-in code could not be sent.')
-    error.code = 'MAIL'
-    throw error
-  }
 
   const code = String(randomInt(0, 1_000_000)).padStart(6, '0')
   const challengeId = randomBytes(16).toString('base64url')
-  sendTimes.push(Date.now())
   challenges.set(challengeId, {
     hash: hashCode(challengeId, code),
     exp: Date.now() + TTL_MS,
     attempts: 0,
   })
 
-  if (!mailConfigured()) {
-    console.log(`Manager sign-in code for ${recoveryEmail()}: ${code}`)
-    return { challengeId }
+  try {
+    await deliver(code)
+  } catch (error) {
+    challenges.delete(challengeId)
+    throw error
   }
 
-  getTransport()
-    .sendMail({
-      from: `LINFI POLYCLEAN <${process.env.SMTP_USER}>`,
-      to: recoveryEmail(),
-      subject: 'Manager sign-in code',
-      text: `Your LINFI POLYCLEAN manager sign-in code is ${code}.\n\nIt expires in 10 minutes.\n\nIf you did not try to open the dashboard, you can ignore this email.`,
-    })
-    .catch((err) => {
-      console.error('Sign-in email failed:', err.message)
-    })
-
+  sendTimes.push(Date.now())
   return { challengeId }
 }
 
 export function checkSignInCode(challengeId, code) {
   const id = String(challengeId || '')
   const item = challenges.get(id)
-  if (!item || item.exp < Date.now()) {
+  if (!id || !item || item.exp < Date.now()) {
     challenges.delete(id)
     const error = new Error('That code has expired. Enter the password again to get a new one.')
     error.code = 'EXPIRED'

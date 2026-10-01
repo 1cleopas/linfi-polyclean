@@ -237,6 +237,10 @@ export default function Admin() {
   async function onLogin(e) {
     e.preventDefault()
     setError('')
+    if (!password.trim()) {
+      setError('Enter the manager password first.')
+      return
+    }
     setSubmitting(true)
     try {
       const data = await adminLogin(password)

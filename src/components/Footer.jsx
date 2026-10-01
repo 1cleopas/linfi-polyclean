@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { Mail, MapPin, MessageCircle, Phone } from 'lucide-react'
 import {
   company,
@@ -31,7 +31,9 @@ function SocialIcon({ name, className }) {
 }
 
 export default function Footer() {
+  const location = useLocation()
   const onHashClick = (to) => {
+    if (location.pathname !== '/') return
     const id = getHashId(to)
     if (id) scrollToHash(id)
   }

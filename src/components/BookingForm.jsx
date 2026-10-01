@@ -26,7 +26,7 @@ const empty = {
 function tankCount(value) {
   const count = Number.parseInt(String(value).trim(), 10)
   if (!Number.isFinite(count) || count < 2) return 1
-  return count
+  return Math.min(count, 100)
 }
 
 function sizeFieldCount(value) {
