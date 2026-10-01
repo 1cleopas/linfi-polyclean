@@ -1,7 +1,7 @@
 import express from 'express'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { join } from 'node:path'
-import { completeChallenge, createChallenge, groupedSecret, loadSecret } from './totp.js'
+import { checkSignInCode, issueSignInCode } from './otp.js'
 import { clientIp, passwordMatches, securityHeaders, tooMany } from './security.js'
 import { countWeekBookings, createJob, createJobs, deleteJob, jobsFilePath, listJobs, replaceAllJobs, updateJob } from './store.js'
 
@@ -10,7 +10,7 @@ const adminPassword = process.env.ADMIN_PASSWORD || 'linfi-admin'
 const SESSION_MS = 1000 * 60 * 60 * 24 * 14
 
 function signSession() {
-  const payload = Buffer.from(JSON.stringify({ exp: Date.now() + SESSION_MS, v: 3 })).toString('base64url')
+  const payload = Buffer.from(JSON.stringify({ exp: Date.now() + SESSION_MS, v: 4 })).toString('base64url')
   const sig = createHmac('sha256', adminPassword).update(payload).digest('base64url')
   return `${payload}.${sig}`
 }
@@ -25,7 +25,7 @@ function hasValidSession(token) {
   if (left.length !== right.length || !timingSafeEqual(left, right)) return false
   try {
     const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'))
-    return data.v === 3 && typeof data.exp === 'number' && data.exp > Date.now()
+    return data.v === 4 && typeof data.exp === 'number' && data.exp > Date.now()
   } catch {
     return false
   }
@@ -96,7 +96,7 @@ app.post('/api/bookings', (req, res) => {
   }
 })
 
-app.post('/api/admin/login', (req, res) => {
+app.post('/api/admin/login', async (req, res) => {
   const ip = clientIp(req)
   if (tooMany(`login:${ip}`, { max: 8, windowMs: 15 * 60 * 1000 })) {
     res.status(429).json({ error: 'Too many sign-in attempts. Wait a few minutes and try again.' })
@@ -106,17 +106,12 @@ app.post('/api/admin/login', (req, res) => {
     res.status(401).json({ error: 'Wrong password.' })
     return
   }
-  if (loadSecret()) {
-    const challenge = createChallenge('login')
-    res.json({ challengeId: challenge.challengeId })
-    return
+  try {
+    const { challengeId } = await issueSignInCode()
+    res.json({ challengeId })
+  } catch (error) {
+    res.status(error.code === 'RATE' ? 429 : 503).json({ error: error.message })
   }
-  const challenge = createChallenge('setup')
-  res.json({
-    challengeId: challenge.challengeId,
-    setup: true,
-    secret: groupedSecret(challenge.secret),
-  })
 })
 
 app.post('/api/admin/login/code', (req, res) => {
@@ -126,7 +121,7 @@ app.post('/api/admin/login/code', (req, res) => {
     return
   }
   try {
-    completeChallenge(req.body?.challengeId, req.body?.code)
+    checkSignInCode(req.body?.challengeId, req.body?.code)
     res.json({ token: signSession() })
   } catch (error) {
     res.status(401).json({ error: error.message })

@@ -97,7 +97,6 @@ export default function Admin() {
   const [tokenReady, setTokenReady] = useState(Boolean(getAdminToken()))
   const [password, setPassword] = useState('')
   const [challengeId, setChallengeId] = useState('')
-  const [setupSecret, setSetupSecret] = useState('')
   const [code, setCode] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [jobs, setJobs] = useState([])
@@ -233,14 +232,7 @@ export default function Admin() {
     setSubmitting(true)
     try {
       const data = await adminLogin(password)
-      if (data.token) {
-        setAdminToken(data.token)
-        setTokenReady(true)
-        setPassword('')
-        return
-      }
       setChallengeId(data.challengeId)
-      setSetupSecret(data.setup ? data.secret : '')
       setPassword('')
       setCode('')
     } catch (err) {
@@ -259,13 +251,11 @@ export default function Admin() {
       setAdminToken(data.token)
       setTokenReady(true)
       setChallengeId('')
-      setSetupSecret('')
       setCode('')
     } catch (err) {
       setError(err.message)
       if (/expired|password again/i.test(err.message)) {
         setChallengeId('')
-        setSetupSecret('')
       }
     } finally {
       setSubmitting(false)
@@ -319,18 +309,13 @@ export default function Admin() {
           <p className="text-xs font-bold tracking-[0.2em] text-secondary uppercase">Manager</p>
           <h1 className="font-headline mt-2 text-2xl font-bold text-primary">LINFI POLYCLEAN</h1>
           <p className="mt-2 text-sm text-muted">
-            {setupSecret
-              ? 'Open Authenticator, add an account, and type this key. Then enter the 6-digit code it shows.'
-              : challengeId
-                ? 'Enter the 6-digit code from Authenticator. It changes every 30 seconds.'
-                : 'Every sign-in needs the manager password and a one-time code from Authenticator. Do not share this page with customers.'}
+            {challengeId
+              ? 'Enter the 6-digit code from the recovery email. It expires in 10 minutes.'
+              : 'Every sign-in needs the manager password and a one-time code sent to the recovery email. Do not share this page with customers.'}
           </p>
-          {setupSecret ? (
-            <p className="mt-6 rounded-xl bg-surface px-4 py-3 text-center font-mono text-lg tracking-[0.2em] text-primary">{setupSecret}</p>
-          ) : null}
           {challengeId ? (
             <label className="mt-6 block text-sm font-semibold text-primary">
-              Authenticator code
+              Sign-in code
               <input
                 className="mt-1 w-full rounded-lg border border-outline/70 bg-surface px-3 py-3 tracking-[0.3em]"
                 inputMode="numeric"
@@ -353,7 +338,7 @@ export default function Admin() {
           )}
           {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
           <Button type="submit" fullWidth className="mt-6" disabled={submitting}>
-            {challengeId ? 'Open dashboard' : 'Continue'}
+            {challengeId ? 'Open dashboard' : 'Send sign-in code'}
           </Button>
           {challengeId && (
             <button
@@ -361,7 +346,6 @@ export default function Admin() {
               className="mt-4 w-full text-sm font-semibold text-secondary"
               onClick={() => {
                 setChallengeId('')
-                setSetupSecret('')
                 setCode('')
                 setError('')
               }}
