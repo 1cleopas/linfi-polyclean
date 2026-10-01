@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { CalendarDays, CircleDollarSign, ClipboardList, LogOut, Plus, ReceiptText, Search } from 'lucide-react'
+import { CalendarDays, CircleDollarSign, ClipboardList, Eye, EyeOff, LogOut, Plus, ReceiptText, Search } from 'lucide-react'
 import { services, tankSizes, tankTypes } from '../data/content'
 import { nextCleaningDate, workWeeksForMonths } from '../lib/weeks'
 import {
@@ -97,6 +97,7 @@ function priceForSize(size) {
 export default function Admin() {
   const [tokenReady, setTokenReady] = useState(Boolean(getAdminToken()))
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [challengeId, setChallengeId] = useState('')
   const [code, setCode] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -323,13 +324,24 @@ export default function Admin() {
           </p>
           <label className="mt-6 block text-sm font-semibold text-primary">
             Password
-            <input
-              className="mt-1 w-full rounded-lg border border-outline/70 bg-surface px-3 py-3"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-            />
+            <span className="relative mt-1 block">
+              <input
+                className="w-full rounded-lg border border-outline/70 bg-surface py-3 pl-3 pr-12"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-muted hover:text-primary"
+                onClick={() => setShowPassword((open) => !open)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-pressed={showPassword}
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" aria-hidden="true" /> : <Eye className="h-5 w-5" aria-hidden="true" />}
+              </button>
+            </span>
           </label>
           <label className="mt-4 block text-sm font-semibold text-primary">
             Sign-in code
