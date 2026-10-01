@@ -27,7 +27,9 @@ export default function Layout() {
     <div className="flex min-h-screen flex-col pt-24">
       <Navbar />
       <main className="flex-1">
-        <Outlet />
+        <div key={pathname} className="page-enter">
+          <Outlet />
+        </div>
       </main>
       <Footer />
       <FloatingActions />

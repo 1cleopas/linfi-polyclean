@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { faqs } from '../data/content'
 import SectionHeader from './SectionHeader'
+import Reveal from './Reveal'
 
 export default function FAQ() {
   const [open, setOpen] = useState(0)
@@ -9,11 +10,14 @@ export default function FAQ() {
   return (
     <section className="scroll-mt-28 bg-white py-16 md:py-24" id="faqs">
       <div className="mx-auto max-w-3xl px-4 md:px-10">
+        <Reveal>
         <SectionHeader
           eyebrow="FAQs"
           title="Questions people ask before they book"
           subtitle="Practical answers so you know what to expect from LINFI POLYCLEAN."
         />
+        </Reveal>
+        <Reveal delay={80}>
         <div className="divide-y divide-outline/50 overflow-hidden rounded-2xl border border-outline/40">
           {faqs.map((item, i) => {
             const isOpen = open === i
@@ -28,7 +32,7 @@ export default function FAQ() {
                   >
                     {item.q}
                     <ChevronDown
-                      className={`h-5 w-5 shrink-0 text-secondary transition ${isOpen ? 'rotate-180' : ''}`}
+                      className={`h-5 w-5 shrink-0 text-secondary transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
                       aria-hidden="true"
                     />
                   </button>
@@ -44,6 +48,7 @@ export default function FAQ() {
             )
           })}
         </div>
+        </Reveal>
       </div>
     </section>
   )

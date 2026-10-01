@@ -36,8 +36,8 @@ export default function WhyChooseUs() {
           {whyChoose.map((item, i) => {
             const Icon = icons[item.icon] || Droplets
             return (
-              <Reveal key={item.title} delay={i * 40}>
-                <div className="h-full rounded-2xl border border-outline/30 bg-white p-4 shadow-[var(--shadow-card)]">
+              <Reveal key={item.title} delay={i * 40} from="scale">
+                <div className="h-full rounded-2xl border border-outline/30 bg-white p-4 shadow-[var(--shadow-card)] transition duration-300 hover:-translate-y-1 hover:border-secondary/50 hover:shadow-[var(--shadow-lift)]">
                   <Icon className="h-5 w-5 text-secondary" aria-hidden="true" />
                   <h3 className="mt-2 text-sm font-bold text-primary">{item.title}</h3>
                   <p className="mt-1 text-sm leading-5 text-muted">{item.text}</p>

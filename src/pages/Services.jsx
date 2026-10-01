@@ -12,6 +12,7 @@ import PageHero from '../components/PageHero'
 import Button from '../components/Button'
 import Seo from '../components/Seo'
 import CTA from '../components/CTA'
+import Reveal from '../components/Reveal'
 
 const icons = {
   droplets: Droplets,
@@ -45,16 +46,16 @@ export default function Services() {
             const Icon = icons[service.icon] || Sparkles
             const reverse = index % 2 === 1
             return (
+              <Reveal key={service.id} from={reverse ? 'right' : 'left'}>
               <article
-                key={service.id}
                 id={service.id}
-                className="scroll-mt-28 grid items-center gap-8 overflow-hidden rounded-3xl bg-white shadow-[var(--shadow-card)] lg:grid-cols-2"
+                className="scroll-mt-28 grid items-center gap-8 overflow-hidden rounded-3xl bg-white shadow-[var(--shadow-card)] transition duration-500 hover:shadow-[var(--shadow-lift)] lg:grid-cols-2"
               >
-                <div className={`relative h-64 lg:h-full ${reverse ? 'lg:order-2' : ''}`}>
+                <div className={`group relative h-64 overflow-hidden lg:h-full ${reverse ? 'lg:order-2' : ''}`}>
                   <img
                     src={images.hero}
                     alt={`${service.name} in Accra by LINFI POLYCLEAN`}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                     loading="lazy"
                   />
                 </div>
@@ -69,6 +70,7 @@ export default function Services() {
                   </Button>
                 </div>
               </article>
+              </Reveal>
             )
           })}
         </div>

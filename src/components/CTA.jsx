@@ -2,6 +2,7 @@ import { CalendarDays, MessageCircle, Phone } from 'lucide-react'
 import { hasPhone, hasWhatsApp, phoneHref, whatsappUrl } from '../data/content'
 import { useQuote } from '../context/QuoteContext'
 import Button from './Button'
+import Reveal from './Reveal'
 
 export default function CTA({
   title = 'Is Your Polytank Due for a Cleaning?',
@@ -11,6 +12,7 @@ export default function CTA({
 
   return (
     <section className="cta-band px-4 py-16 text-center md:py-20">
+      <Reveal>
       <div className="mx-auto max-w-3xl">
         <h2 className="font-headline text-3xl font-bold tracking-tight text-white md:text-4xl">{title}</h2>
         <p className="mt-4 text-base text-white/85 md:text-lg">{text}</p>
@@ -33,6 +35,7 @@ export default function CTA({
           </Button>
         </div>
       </div>
+      </Reveal>
     </section>
   )
 }

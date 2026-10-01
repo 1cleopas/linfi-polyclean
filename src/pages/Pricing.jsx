@@ -4,6 +4,7 @@ import SectionHeader from '../components/SectionHeader'
 import Seo from '../components/Seo'
 import Button from '../components/Button'
 import { useQuote } from '../context/QuoteContext'
+import Reveal from '../components/Reveal'
 
 export default function Pricing() {
   const { openQuote } = useQuote()
@@ -24,21 +25,25 @@ export default function Pricing() {
 
       <section className="bg-surface py-16 md:py-24">
         <div className="mx-auto max-w-[1200px] px-4 md:px-10">
+          <Reveal>
           <SectionHeader
             title="What can affect the price?"
             subtitle="Share these details when you book so we can confirm a clear amount."
           />
+          </Reveal>
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {pricingFactors.map((item) => (
+            {pricingFactors.map((item, i) => (
+              <Reveal key={item} delay={i * 60} from="scale">
               <li
-                key={item}
-                className="rounded-2xl border border-outline/30 bg-white p-6 font-semibold text-primary shadow-[var(--shadow-card)]"
+                className="h-full rounded-2xl border border-outline/30 bg-white p-6 font-semibold text-primary shadow-[var(--shadow-card)] transition duration-300 hover:-translate-y-1 hover:border-secondary/50 hover:shadow-[var(--shadow-lift)]"
               >
                 {item}
               </li>
+              </Reveal>
             ))}
           </ul>
 
+          <Reveal>
           <div className="mt-12 rounded-3xl bg-primary p-8 text-center text-white md:p-12">
             <h2 className="font-headline text-2xl font-bold md:text-3xl">Book a Cleaning</h2>
             <p className="mx-auto mt-3 max-w-xl text-white/80">
@@ -48,6 +53,7 @@ export default function Pricing() {
               Book a Cleaning
             </Button>
           </div>
+          </Reveal>
         </div>
       </section>
     </>

@@ -29,7 +29,7 @@ export default function Button({
   disabled = false,
   ...props
 }) {
-  const classes = `inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold tracking-wide transition-all duration-200 min-h-12 active:scale-[0.98] ${variants[variant]} ${fullWidth ? 'w-full' : ''} ${disabled ? 'pointer-events-none opacity-60' : ''} ${className}`
+  const classes = `btn-shine inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold tracking-wide transition-all duration-200 min-h-12 hover:-translate-y-0.5 active:scale-[0.98] ${variants[variant]} ${fullWidth ? 'w-full' : ''} ${disabled ? 'pointer-events-none opacity-60' : ''} ${className}`
 
   if (to) {
     return (

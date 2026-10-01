@@ -62,8 +62,8 @@ export default function Navbar() {
       }`}
     >
       <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-3 px-4 py-3 md:px-10">
-        <Link to="/#home" className="flex min-h-11 items-center gap-2.5" aria-label={`${company.name} home`}>
-          <Logo className="h-12 w-12 shrink-0 shadow-sm ring-1 ring-outline/40 sm:h-14 sm:w-14" />
+        <Link to="/#home" className="flex min-h-11 items-center gap-2.5 transition duration-300 hover:opacity-90" aria-label={`${company.name} home`}>
+          <Logo className="h-12 w-12 shrink-0 shadow-sm ring-1 ring-outline/40 transition duration-300 hover:scale-105 sm:h-14 sm:w-14" />
           <span className="leading-tight">
             <span className="block font-headline text-sm font-bold tracking-tight text-primary sm:text-base">
               LINFI POLYCLEAN

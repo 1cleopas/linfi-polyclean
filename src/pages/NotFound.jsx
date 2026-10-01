@@ -4,7 +4,7 @@ import Seo from '../components/Seo'
 
 export default function NotFound() {
   return (
-    <section className="flex min-h-[60vh] flex-col items-center justify-center px-4 py-20 text-center">
+    <section className="anim-fade-up flex min-h-[60vh] flex-col items-center justify-center px-4 py-20 text-center">
       <Seo title="Page not found | Linfi Polyclean" description="The page you requested does not exist." path="/404" />
       <p className="text-sm font-bold tracking-widest text-secondary uppercase">404</p>
       <h1 className="font-headline mt-3 text-3xl font-bold text-primary">This page does not exist</h1>

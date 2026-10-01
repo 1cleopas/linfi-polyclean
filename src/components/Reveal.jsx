@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 
-export default function Reveal({ children, className = '', delay = 0 }) {
+const hiddenFrom = {
+  up: 'translate-y-8',
+  down: '-translate-y-8',
+  left: '-translate-x-8',
+  right: 'translate-x-8',
+  scale: 'scale-[0.96]',
+}
+
+export default function Reveal({ children, className = '', delay = 0, from = 'up' }) {
   const ref = useRef(null)
   const [visible, setVisible] = useState(false)
 
@@ -39,7 +47,7 @@ export default function Reveal({ children, className = '', delay = 0 }) {
     <div
       ref={ref}
       className={`transition-all duration-700 ease-out ${
-        visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+        visible ? 'translate-x-0 translate-y-0 scale-100 opacity-100' : `opacity-0 ${hiddenFrom[from] || hiddenFrom.up}`
       } ${className}`}
       style={{ transitionDelay: `${delay}ms` }}
     >

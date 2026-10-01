@@ -23,14 +23,16 @@ export default function About() {
 
       <section className="bg-white py-16 md:py-24">
         <div className="mx-auto max-w-3xl px-4 md:px-10">
-          <div>
+          <Reveal>
+            <div>
             <SectionHeader align="left" eyebrow="Our story" title={aboutStory.heading} />
             {aboutStory.body.map((para) => (
               <p key={para.slice(0, 24)} className="mt-4 text-sm leading-relaxed text-muted md:text-base">
                 {para}
               </p>
             ))}
-          </div>
+            </div>
+          </Reveal>
         </div>
       </section>
 

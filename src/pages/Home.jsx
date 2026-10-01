@@ -30,7 +30,8 @@ export default function Home() {
         <WhyChooseUs />
 
         <section className="scroll-mt-28 px-4 md:px-10" id="booking">
-          <div className="mx-auto max-w-[1200px] rounded-3xl border border-outline/20 bg-white p-8 shadow-[var(--shadow-card)] md:p-12">
+          <Reveal>
+            <div className="mx-auto max-w-[1200px] rounded-3xl border border-outline/20 bg-white p-8 shadow-[var(--shadow-card)] md:p-12">
             <div className="mb-10 text-center">
               <h2 className="font-headline text-[28px] font-bold text-primary md:text-[32px]">
                 Book Your Polytank Cleaning in Accra
@@ -42,11 +43,13 @@ export default function Home() {
             <div className="mx-auto max-w-4xl">
               <BookingForm />
             </div>
-          </div>
+            </div>
+          </Reveal>
         </section>
 
         <section className="px-4 md:px-10" id="pricing">
-          <div className="mx-auto max-w-[1200px] rounded-3xl bg-primary p-8 text-white md:p-12">
+          <Reveal>
+            <div className="mx-auto max-w-[1200px] rounded-3xl bg-primary p-8 text-white md:p-12">
             <div className="grid items-center gap-10 lg:grid-cols-2">
               <div>
                 <p className="text-xs font-bold tracking-[0.2em] text-aqua uppercase">Pricing</p>
@@ -79,22 +82,25 @@ export default function Home() {
                 </Button>
               </div>
             </div>
-          </div>
+            </div>
+          </Reveal>
         </section>
 
         <section className="px-4 md:px-10" id="service-area">
           <div className="mx-auto max-w-[1200px]">
-            <SectionHeader
+            <Reveal>
+              <SectionHeader
               title="Polytank Cleaning Services Across Accra"
               subtitle="We provide polytank cleaning across Accra and surrounding areas. Coverage is subject to scheduling — confirm your location when you book."
-            />
+              />
+            </Reveal>
             <div className="grid gap-8 lg:grid-cols-2">
-              <div>
+              <Reveal from="left">
                 <ul className="flex flex-wrap gap-2">
                   {accraAreas.map((area) => (
                     <li
                       key={area}
-                      className="rounded-full border border-outline/40 bg-white px-4 py-2 text-sm font-medium text-primary"
+                      className="rounded-full border border-outline/40 bg-white px-4 py-2 text-sm font-medium text-primary transition duration-300 hover:-translate-y-0.5 hover:border-secondary hover:text-secondary"
                     >
                       {area}
                     </li>
@@ -109,8 +115,9 @@ export default function Home() {
                   className="mt-6 h-56 w-full rounded-2xl object-cover"
                   loading="lazy"
                 />
-              </div>
-              <div className="overflow-hidden rounded-2xl border border-outline/30 bg-surface-high">
+              </Reveal>
+              <Reveal from="right" delay={80}>
+                <div className="overflow-hidden rounded-2xl border border-outline/30 bg-surface-high">
                 <iframe
                   title="Map of Accra, Ghana — LINFI POLYCLEAN coverage area"
                   src={mapEmbedSrc}
@@ -118,7 +125,8 @@ export default function Home() {
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                 />
-              </div>
+                </div>
+              </Reveal>
             </div>
           </div>
         </section>
@@ -131,7 +139,7 @@ export default function Home() {
             />
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {testimonials.map((item, i) => (
-                <Reveal key={`${item.location}-${i}`} delay={i * 40}>
+                <Reveal key={`${item.location}-${i}`} delay={i * 80} from="scale">
                   <TestimonialCard item={item} />
                 </Reveal>
               ))}
@@ -144,15 +152,19 @@ export default function Home() {
 
         <section className="scroll-mt-28 px-4 md:px-10" id="contact">
           <div className="mx-auto grid max-w-[1200px] gap-10 lg:grid-cols-2">
-            <div>
+            <Reveal from="left">
+              <div>
               <p className="text-xs font-bold tracking-[0.2em] text-secondary uppercase">Contact</p>
               <h2 className="font-headline mt-3 text-[28px] font-bold text-primary md:text-[32px]">
                 {company.name}
               </h2>
               <p className="mt-2 text-muted">Polytank Cleaning &amp; Disinfection — Accra, Ghana</p>
               <ContactDetails />
-            </div>
-            <ContactForm />
+              </div>
+            </Reveal>
+            <Reveal from="right" delay={80}>
+              <ContactForm />
+            </Reveal>
           </div>
         </section>
       </div>
