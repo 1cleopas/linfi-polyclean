@@ -2,7 +2,6 @@ import express from 'express'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { join } from 'node:path'
 import { countWeekBookings, createJob, createJobs, deleteJob, jobsFilePath, listJobs, replaceAllJobs, updateJob } from './store.js'
-import { WEEKLY_BOOKING_LIMIT } from '../src/lib/weeks.js'
 
 const app = express()
 const adminPassword = process.env.ADMIN_PASSWORD || 'linfi-admin'
@@ -57,8 +56,8 @@ app.post('/api/bookings', (req, res) => {
   try {
     const requested = Number.parseInt(String(body.tanks || '').trim(), 10)
     const tankCount = Number.isFinite(requested) && requested > 1 ? requested : 1
-    if (tankCount > WEEKLY_BOOKING_LIMIT) {
-      res.status(400).json({ error: `One booking can include up to ${WEEKLY_BOOKING_LIMIT} tanks.` })
+    if (tankCount > 100) {
+      res.status(400).json({ error: 'One booking can include up to 100 tanks.' })
       return
     }
 
@@ -78,13 +77,8 @@ app.post('/api/bookings', (req, res) => {
       job: jobs[0],
       jobs,
       weekCount: countWeekBookings(jobs[0].week),
-      weekLimit: WEEKLY_BOOKING_LIMIT,
     })
   } catch (error) {
-    if (error.code === 'WEEK_FULL') {
-      res.status(409).json({ error: error.message })
-      return
-    }
     if (error.code === 'INVALID') {
       res.status(400).json({ error: error.message })
       return
@@ -102,7 +96,7 @@ app.post('/api/admin/login', (req, res) => {
 })
 
 app.get('/api/admin/jobs', requireAdmin, (_req, res) => {
-  res.json({ jobs: listJobs(), weekLimit: WEEKLY_BOOKING_LIMIT })
+  res.json({ jobs: listJobs() })
 })
 
 app.put('/api/admin/jobs', requireAdmin, (req, res) => {
@@ -127,7 +121,7 @@ app.post('/api/admin/jobs', requireAdmin, (req, res) => {
     const job = createJob({ ...(req.body || {}), source: req.body?.source || 'manual' })
     res.status(201).json({ job })
   } catch (error) {
-    res.status(error.code === 'WEEK_FULL' ? 409 : 400).json({ error: error.message })
+    res.status(400).json({ error: error.message })
   }
 })
 
@@ -140,7 +134,7 @@ app.patch('/api/admin/jobs/:id', requireAdmin, (req, res) => {
     }
     res.json({ job })
   } catch (error) {
-    res.status(error.code === 'WEEK_FULL' ? 409 : 400).json({ error: error.message })
+    res.status(400).json({ error: error.message })
   }
 })
 

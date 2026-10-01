@@ -1,4 +1,3 @@
-export const WEEKLY_BOOKING_LIMIT = 30
 export const WORK_DAYS = 'Tuesday to Sunday'
 
 const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { CalendarDays, CircleDollarSign, ClipboardList, LogOut, Plus, ReceiptText, Search } from 'lucide-react'
 import { services, tankSizes, tankTypes } from '../data/content'
-import { nextCleaningDate, workWeeksForMonths, WEEKLY_BOOKING_LIMIT } from '../lib/weeks'
+import { nextCleaningDate, workWeeksForMonths } from '../lib/weeks'
 import {
   adminLogin,
   createAdminJob,
@@ -349,10 +349,8 @@ export default function Admin() {
                 ))}
               </select>
             </label>
-            <p className="font-headline mt-3 text-2xl font-bold text-primary">
-              {selectedWeekCount} / {WEEKLY_BOOKING_LIMIT}
-            </p>
-            <p className="mt-1 text-xs text-muted">Tuesday–Sunday cap</p>
+            <p className="font-headline mt-3 text-2xl font-bold text-primary">{selectedWeekCount}</p>
+            <p className="mt-1 text-xs text-muted">No weekly cap</p>
           </div>
           <Stat icon={CircleDollarSign} label="Month estimate" value={formatCedis(monthlyEstimate)} note="Quoted amounts this month" />
           <Stat icon={CircleDollarSign} label="Month earned" value={formatCedis(monthlyEarned)} note="Marked as paid" />
@@ -402,7 +400,7 @@ export default function Admin() {
             <option value="all">All weeks (next 3 months)</option>
             {weekChoices.map((week) => (
               <option key={week.value} value={week.label}>
-                {week.label} ({weekCounts[week.label] || 0}/{WEEKLY_BOOKING_LIMIT})
+                {week.label} ({weekCounts[week.label] || 0})
               </option>
             ))}
           </select>
@@ -455,9 +453,7 @@ export default function Admin() {
                   <td className="px-4 py-3 text-muted">
                     {job.week || '—'}
                     {job.week ? (
-                      <span className="mt-1 block text-xs">
-                        {weekCounts[job.week] || 0}/{WEEKLY_BOOKING_LIMIT}
-                      </span>
+                      <span className="mt-1 block text-xs">{weekCounts[job.week] || 0} booking{(weekCounts[job.week] || 0) === 1 ? '' : 's'}</span>
                     ) : null}
                   </td>
                   <td className="px-4 py-3 text-muted">
@@ -530,7 +526,7 @@ export default function Admin() {
                   })()}
                   {weeks.map((week) => (
                     <option key={week.value} value={week.label}>
-                      {week.label} ({weekCounts[week.label] || 0}/{WEEKLY_BOOKING_LIMIT})
+                      {week.label} ({weekCounts[week.label] || 0})
                     </option>
                   ))}
                 </select>

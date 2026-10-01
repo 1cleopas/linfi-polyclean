@@ -1,6 +1,5 @@
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { WEEKLY_BOOKING_LIMIT } from '../src/lib/weeks.js'
 
 const dataDir = process.env.DATA_DIR || join(process.cwd(), 'data')
 const filePath = join(dataDir, 'jobs.json')
@@ -47,15 +46,6 @@ export function countWeekBookings(week, exceptId) {
   ).length
 }
 
-function weekFullError() {
-  const error = new Error(`This week already has ${WEEKLY_BOOKING_LIMIT} bookings.`)
-  error.code = 'WEEK_FULL'
-  return error
-}
-
-function occupiesWeek(status) {
-  return status !== 'cancelled'
-}
 
 function invalidError(message) {
   const error = new Error(message)
@@ -94,31 +84,10 @@ function buildJob(input, now) {
   return job
 }
 
-function assertWeeksHaveRoom(existingJobs, incomingJobs) {
-  const addingByWeek = new Map()
-  for (const job of incomingJobs) {
-    if (!job.week || !occupiesWeek(job.status)) continue
-    addingByWeek.set(job.week, (addingByWeek.get(job.week) || 0) + 1)
-  }
-
-  for (const [week, adding] of addingByWeek) {
-    const existing = existingJobs.filter((job) => job.week === week && job.status !== 'cancelled').length
-    if (existing + adding <= WEEKLY_BOOKING_LIMIT) continue
-    const remaining = Math.max(0, WEEKLY_BOOKING_LIMIT - existing)
-    if (remaining === 0 || adding === 1) throw weekFullError()
-    const error = new Error(
-      `This week has room for ${remaining} more booking${remaining === 1 ? '' : 's'}. This request needs ${adding}, one for each tank.`,
-    )
-    error.code = 'WEEK_FULL'
-    throw error
-  }
-}
-
 export function createJobs(inputs) {
   const existing = readJobs()
   const now = new Date().toISOString()
   const created = inputs.map((input) => buildJob(input, now))
-  assertWeeksHaveRoom(existing, created)
   writeJobs([...existing, ...created])
   return created
 }
@@ -135,11 +104,6 @@ export function updateJob(id, patch) {
   const current = jobs[index]
   const nextWeek = patch.week != null ? String(patch.week).trim() : current.week
   const nextStatus = patch.status != null ? patch.status : current.status
-  const willOccupy = Boolean(nextWeek) && occupiesWeek(nextStatus)
-  const alreadyOccupies = current.week === nextWeek && occupiesWeek(current.status)
-  if (willOccupy && !alreadyOccupies && countWeekBookings(nextWeek, id) >= WEEKLY_BOOKING_LIMIT) {
-    throw weekFullError()
-  }
   if (patch.fullName != null && !String(patch.fullName).trim()) {
     const error = new Error('Name is required.')
     error.code = 'INVALID'

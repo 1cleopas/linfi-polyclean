@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { CircleCheckBig } from 'lucide-react'
 import { hasWhatsApp, tankSizes, tankTypes, tryOpenWhatsApp } from '../data/content'
-import { workWeeksForMonths, WEEKLY_BOOKING_LIMIT, WORK_DAYS } from '../lib/weeks'
+import { workWeeksForMonths, WORK_DAYS } from '../lib/weeks'
 import { createBooking } from '../lib/api'
 import { useQuote } from '../context/QuoteContext'
 import Button from './Button'
@@ -71,7 +71,7 @@ function bookingMessage(values) {
       .map((size, index) => `Tank ${index + 1}${size ? `: ${size}` : ''}`)
       .join('\n'),
     values.tanks ? `Number of tanks: ${values.tanks}` : '',
-    values.week ? `Preferred week: ${values.week} (working days ${WORK_DAYS}, up to ${WEEKLY_BOOKING_LIMIT} bookings)` : '',
+    values.week ? `Preferred week: ${values.week} (working days ${WORK_DAYS})` : '',
     values.time ? `Preferred time: ${values.time}` : '',
     values.extra ? `Additional information: ${values.extra}` : '',
   ]
@@ -308,7 +308,7 @@ export default function BookingForm() {
         </select>
         {errors.week && <span className="font-medium normal-case text-red-600">{errors.week}</span>}
         <span className="font-medium normal-case text-muted">
-          We take up to {WEEKLY_BOOKING_LIMIT} bookings each week, and each tank counts as one booking. Working days are {WORK_DAYS} (Monday off).
+          Working days are {WORK_DAYS} (Monday off). Each tank is saved as its own booking.
         </span>
       </label>
       <label className="flex flex-col gap-1.5 text-xs font-semibold tracking-wide text-muted uppercase">

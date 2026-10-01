@@ -155,7 +155,7 @@ export const whyChoose = [
   {
     icon: 'calendar',
     title: 'Convenient scheduling',
-    text: 'Choose a preferred week that works for your home or business. We work Tuesday to Sunday and take up to 30 bookings each week.',
+    text: 'Choose a preferred week that works for your home or business. We work Tuesday to Sunday.',
   },
   {
     icon: 'home',
