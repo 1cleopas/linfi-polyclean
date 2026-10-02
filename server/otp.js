@@ -44,44 +44,35 @@ function smsError(message) {
   return error
 }
 
-function africaTalkingConfigured() {
-  return Boolean(process.env.AFRICASTALKING_USERNAME && process.env.AFRICASTALKING_API_KEY)
+function twilioConfigured() {
+  return Boolean(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_FROM)
 }
 
 function smsConfigured() {
-  return africaTalkingConfigured()
+  return twilioConfigured()
 }
 
-async function sendAfricaTalking(to, text) {
-  const username = String(process.env.AFRICASTALKING_USERNAME || '').trim()
-  const apiKey = String(process.env.AFRICASTALKING_API_KEY || '').trim()
-  const from = String(process.env.AFRICASTALKING_FROM || '').trim()
-  const sandbox = String(process.env.AFRICASTALKING_SANDBOX || '').toLowerCase() === 'true'
-  const host = sandbox ? 'https://api.sandbox.africastalking.com' : 'https://api.africastalking.com'
+async function sendTwilio(to, text) {
+  const sid = String(process.env.TWILIO_ACCOUNT_SID || '').trim()
+  const token = String(process.env.TWILIO_AUTH_TOKEN || '').trim()
+  const from = String(process.env.TWILIO_FROM || '').trim()
+  const auth = Buffer.from(`${sid}:${token}`).toString('base64')
   const body = new URLSearchParams({
-    username,
-    to: `+${to}`,
-    message: text,
+    To: `+${to}`,
+    From: from,
+    Body: text,
   })
-  if (from) body.set('from', from)
-  const response = await fetch(`${host}/version1/messaging`, {
+  const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
     method: 'POST',
     headers: {
-      apiKey,
-      Accept: 'application/json',
+      Authorization: `Basic ${auth}`,
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body,
   })
   const data = await response.json().catch(() => ({}))
-  const recipients = data.SMSMessageData?.Recipients
-  const delivered = Array.isArray(recipients) && recipients.some((item) => {
-    const code = Number(item.statusCode)
-    return item.status === 'Success' || (code >= 100 && code < 200)
-  })
-  if (!response.ok || !delivered) {
-    const reason = recipients?.[0]?.status || data.SMSMessageData?.Message || `Africa's Talking ${response.status}`
-    throw new Error(reason)
+  if (!response.ok || !data.sid) {
+    throw new Error(data.message || `Twilio ${response.status}`)
   }
 }
 
@@ -95,17 +86,17 @@ async function deliver(code) {
 
   if (!smsConfigured()) {
     if (isLive()) {
-      throw smsError('Text messages are not set up on the live site. Add AFRICASTALKING_USERNAME and AFRICASTALKING_API_KEY, then try again.')
+      throw smsError('Text messages are not set up on the live site. Add TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN and TWILIO_FROM, then try again.')
     }
     console.log(`Manager sign-in code for +${to}: ${code}`)
     return
   }
 
   try {
-    await sendAfricaTalking(to, text)
+    await sendTwilio(to, text)
   } catch (err) {
     console.error('Sign-in SMS failed:', err.message)
-    throw smsError('The sign-in code could not be sent to the phone. Check the Africa\'s Talking settings and try again.')
+    throw smsError('The sign-in code could not be sent to the phone. Check the Twilio settings and try again.')
   }
 }
 
