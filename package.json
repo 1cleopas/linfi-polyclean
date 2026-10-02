@@ -8,7 +8,7 @@
     "dev:client": "vite --host 127.0.0.1 --port 5173",
     "dev:server": "node --watch server/index.js",
     "start": "node server/index.js",
-    "build": "vite build && node --input-type=module -e \"import { copyFileSync } from 'node:fs'; copyFileSync('dist/index.html', 'dist/404.html')\"",
+    "build": "vite build && node --input-type=module -e \"import { copyFileSync } from 'node:fs'; copyFileSync('dist/index.html', 'dist/404.html'); copyFileSync('public/.htaccess', 'dist/.htaccess')\"",
     "preview": "vite preview --host 127.0.0.1 --port 4173"
   },
   "devDependencies": {

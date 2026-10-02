@@ -25,10 +25,6 @@ function smtpPass() {
   return String(process.env.SMTP_PASS || '').replace(/\s/g, '')
 }
 
-function mailConfigured() {
-  return Boolean(smtpUser() && smtpPass())
-}
-
 function isLive() {
   return process.env.NODE_ENV === 'production' || process.env.RENDER === 'true'
 }
@@ -56,7 +52,7 @@ async function deliver(code) {
 
   if (!user || !pass) {
     if (isLive()) {
-      throw mailError('Mail is not set up on the live site. In Render Environment add SMTP_USER and SMTP_PASS, save, then try again.')
+      throw mailError('Mail is not set up on the live site. Add SMTP_USER and SMTP_PASS on the server, save, then try again.')
     }
     console.log(`Manager sign-in code for ${to}: ${code}`)
     return

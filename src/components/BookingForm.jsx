@@ -156,7 +156,6 @@ export default function BookingForm() {
         extra: values.extra,
       })
     } catch (err) {
-      if (err.status === 409) setErrors((prev) => ({ ...prev, week: err.message }))
       setSaveError(err.message || 'The booking could not be saved. Please try again.')
       setSaving(false)
       return

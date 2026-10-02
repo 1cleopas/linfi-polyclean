@@ -418,10 +418,7 @@ export default function Admin() {
               <select
                 className="mt-2 w-full rounded-lg border border-outline/70 bg-surface px-2 py-2 text-xs font-semibold tracking-normal text-primary normal-case"
                 value={selectedCountWeek}
-                onChange={(e) => {
-                  setCountWeek(e.target.value)
-                  setWeekFilter(e.target.value)
-                }}
+                onChange={(e) => setCountWeek(e.target.value)}
               >
                 {weekChoices.map((week) => (
                   <option key={week.value} value={week.label}>

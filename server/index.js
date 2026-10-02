@@ -1,5 +1,6 @@
 import { rootDir } from './loadEnv.js'
 import express from 'express'
+import { existsSync } from 'node:fs'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { join } from 'node:path'
 import { checkSignInCode, issueSignInCode } from './otp.js'
@@ -37,6 +38,13 @@ app.disable('x-powered-by')
 app.set('trust proxy', 1)
 app.use(securityHeaders)
 app.use(express.json({ limit: '200kb' }))
+app.use((error, _req, res, next) => {
+  if (error instanceof SyntaxError) {
+    res.status(400).json({ error: 'Invalid request.' })
+    return
+  }
+  next(error)
+})
 
 function requireAdmin(req, res, next) {
   const header = req.headers.authorization || ''
@@ -53,7 +61,7 @@ app.get('/api/health', (_req, res) => {
 })
 
 app.post('/api/bookings', (req, res) => {
-  if (tooMany(`book:${clientIp(req)}`, { max: 8, windowMs: 15 * 60 * 1000 })) {
+  if (tooMany(`book:${clientIp(req)}`, { max: 24, windowMs: 15 * 60 * 1000 })) {
     res.status(429).json({ error: 'Too many booking attempts. Please wait a few minutes.' })
     return
   }
@@ -181,10 +189,13 @@ app.delete('/api/admin/jobs/:id', requireAdmin, (req, res) => {
 })
 
 const dist = join(rootDir, 'dist')
-app.use(express.static(dist))
-app.get(/.*/, (_req, res) => {
-  res.sendFile(join(dist, 'index.html'))
-})
+const indexFile = join(dist, 'index.html')
+if (existsSync(indexFile)) {
+  app.use(express.static(dist))
+  app.get(/.*/, (_req, res) => {
+    res.sendFile(indexFile)
+  })
+}
 
 app.listen(port, '0.0.0.0', () => {
   console.log(`LINFI POLYCLEAN server listening on 0.0.0.0:${port}`)

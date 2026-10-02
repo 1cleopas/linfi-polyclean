@@ -101,8 +101,8 @@ function buildJob(input, now) {
 
 export function createJobs(inputs) {
   const existing = readJobs()
-  const now = new Date().toISOString()
-  const created = inputs.map((input) => buildJob(input, now))
+  const started = Date.now()
+  const created = inputs.map((input, index) => buildJob(input, new Date(started + index).toISOString()))
   writeJobs([...existing, ...created])
   return created
 }
