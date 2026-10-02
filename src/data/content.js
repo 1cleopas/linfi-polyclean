@@ -312,7 +312,6 @@ export const images = {
   commercial: '/images/work-commercial.jpg',
   interior: '/images/work-interior.jpg',
   compound: '/images/work-compound.jpg',
-  detail: '/images/work-detail.jpg',
   team: '/images/technicians-compound.png',
   scrub: '/images/why-us.jpg',
   tank: '/images/polytank-hero.jpg',
@@ -356,11 +355,6 @@ export const gallery = [
     src: '/images/why-us.jpg',
     alt: 'Technicians scrubbing and rinsing a water tank',
     label: 'Thorough cleaning',
-  },
-  {
-    src: '/images/work-detail.jpg',
-    alt: 'Close detail of a freshly rinsed tank lid and hose',
-    label: 'The finish',
   },
   {
     src: '/images/accra-neighborhood.jpg',
