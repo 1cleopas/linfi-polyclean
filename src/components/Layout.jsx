@@ -24,9 +24,9 @@ export default function Layout() {
   }, [pathname, hash])
 
   return (
-    <div className="flex min-h-screen flex-col pt-24">
+    <div className={`site ${pathname === '/' ? 'is-home' : ''}`}>
       <Navbar />
-      <main className="flex-1">
+      <main className="site-main">
         <div key={pathname} className="page-enter">
           <Outlet />
         </div>

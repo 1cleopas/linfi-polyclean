@@ -55,90 +55,67 @@ export default function Navbar() {
     }
   }
 
+  const overHero = location.pathname === '/' && !scrolled && !open
+
   return (
-    <header
-      className={`fixed top-0 z-50 w-full transition-all duration-300 ${
-        scrolled || open ? 'glass-nav shadow-sm border-b border-outline/40' : 'bg-surface/80 backdrop-blur-md'
-      }`}
-    >
-      <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-3 px-4 py-3 md:px-10">
-        <Link to="/#home" className="flex min-h-11 items-center gap-2.5 transition duration-300 hover:opacity-90" aria-label={`${company.name} home`}>
-          <Logo className="h-12 w-12 shrink-0 shadow-sm ring-1 ring-outline/40 transition duration-300 hover:scale-105 sm:h-14 sm:w-14" />
-          <span className="leading-tight">
-            <span className="block font-headline text-sm font-bold tracking-tight text-primary sm:text-base">
-              LINFI POLYCLEAN
-            </span>
-            <span className="hidden text-[11px] font-medium uppercase tracking-wider text-secondary sm:block">
-              Clean Tank · Safe Life
-            </span>
+    <header className={`header ${scrolled || open ? 'is-solid' : ''} ${overHero ? 'is-over-hero' : ''}`}>
+      <div className="header-bar">
+        <Link to="/#home" className="brand" aria-label={`${company.name} home`}>
+          <Logo className="logo-nav" />
+          <span>
+            <span className="brand-name">LINFI POLYCLEAN</span>
+            <span className="brand-tag">Clean Tank · Safe Life</span>
           </span>
         </Link>
 
-        <nav className="hidden items-center xl:flex" aria-label="Primary">
+        <nav className="nav-desktop" aria-label="Primary">
           {navLinks.map((link) => (
             <Link
               key={link.to}
               to={link.to}
               onClick={() => onHashClick(link.to)}
-              className={`rounded-full px-3 py-2 text-[13px] font-semibold transition-colors ${
-                isActive(link.to) ? 'bg-surface-low text-secondary' : 'text-ink/80 hover:bg-surface-low hover:text-primary'
-              }`}
+              className={`nav-link ${isActive(link.to) ? 'is-active' : ''}`}
             >
               {link.label}
             </Link>
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="header-actions">
           {hasWhatsApp() && (
-            <a
-              href={whatsappUrl()}
-              target="_blank"
-              rel="noreferrer"
-              className="hidden h-11 w-11 items-center justify-center rounded-full bg-whatsapp text-white shadow-sm transition hover:scale-105 sm:inline-flex"
-              aria-label="Chat on WhatsApp"
-            >
-              <MessageCircle className="h-5 w-5" aria-hidden="true" />
+            <a href={whatsappUrl()} target="_blank" rel="noreferrer" className="nav-wa" aria-label="Chat on WhatsApp">
+              <MessageCircle className="icon" aria-hidden="true" />
             </a>
           )}
-          <Button className="hidden px-5 text-[13px] sm:inline-flex" onClick={() => openQuote()}>
+          <Button className="nav-book" onClick={() => openQuote()}>
             Book a Tank Cleaning
           </Button>
           <button
             type="button"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-outline text-primary xl:hidden"
+            className="menu-toggle"
             aria-label={open ? 'Close menu' : 'Open menu'}
             aria-expanded={open}
             aria-controls="mobile-nav"
             onClick={() => setOpen((v) => !v)}
           >
-            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {open ? <X className="icon" /> : <Menu className="icon" />}
           </button>
         </div>
       </div>
 
-      <div
-        id="mobile-nav"
-        className={`overflow-hidden transition-[max-height,opacity] duration-300 xl:hidden ${
-          open ? 'max-h-[640px] opacity-100' : 'pointer-events-none max-h-0 opacity-0'
-        }`}
-        aria-hidden={!open}
-      >
-        <nav className="flex flex-col gap-1 border-t border-outline/50 px-4 py-4" aria-label="Mobile">
+      <div id="mobile-nav" className={`mobile-nav ${open ? 'is-open' : ''}`} aria-hidden={!open}>
+        <nav className="mobile-nav-inner" aria-label="Mobile">
           {navLinks.map((link) => (
             <Link
               key={link.to}
               to={link.to}
               onClick={() => onHashClick(link.to)}
-              className={`rounded-xl px-4 py-3 text-base font-semibold ${
-                isActive(link.to) ? 'bg-surface-low text-secondary' : 'text-primary hover:bg-surface-low'
-              }`}
+              className={`mobile-link ${isActive(link.to) ? 'is-active' : ''}`}
             >
               {link.label}
             </Link>
           ))}
           <Button
-            className="mt-2"
             fullWidth
             onClick={() => {
               setOpen(false)
@@ -148,8 +125,8 @@ export default function Navbar() {
             Book a Tank Cleaning
           </Button>
           {hasWhatsApp() && (
-            <Button href={whatsappUrl()} variant="whatsapp" fullWidth className="mt-1">
-              <MessageCircle className="h-4 w-4" aria-hidden="true" />
+            <Button href={whatsappUrl()} variant="whatsapp" fullWidth>
+              <MessageCircle className="icon-sm" aria-hidden="true" />
               WhatsApp Us
             </Button>
           )}

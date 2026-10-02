@@ -115,7 +115,7 @@ export default function BookingForm() {
     setValues((prev) => {
       if (name !== 'tanks') return { ...prev, [name]: value }
       const count = sizeFieldCount(value)
-      const tankSizesByTank = Array.from({ length: count }, (_, index) => prev.tankSizesByTank?.[index] || (index === 0 ? prev.tankSize : ''))
+      const tankSizesByTank = Array.from({ length: count }, (_, i) => prev.tankSizesByTank?.[i] || (i === 0 ? prev.tankSize : ''))
       return { ...prev, tanks: value, tankSizesByTank }
     })
   }
@@ -169,30 +169,29 @@ export default function BookingForm() {
     setSaving(false)
   }
 
-  const fieldClass =
-    'rounded-lg border border-outline/70 bg-surface px-3 py-3 text-base text-ink outline-none transition focus:border-secondary focus:ring-1 focus:ring-secondary'
-
   if (success) {
     const message = bookingMessage(values)
     return (
-      <div className="rounded-3xl border border-outline/30 bg-white p-8 text-center shadow-[var(--shadow-card)] md:p-12">
-        <CircleCheckBig className="mx-auto h-14 w-14 text-green" aria-hidden="true" />
-        <h3 className="font-headline mt-4 text-2xl font-bold text-primary">Request received</h3>
-        <p className="mx-auto mt-3 max-w-lg text-muted">
+      <div className="success-card">
+        <CircleCheckBig className="icon-2xl" aria-hidden="true" />
+        <h3 className="headline" style={{ marginTop: '1rem' }}>
+          Request received
+        </h3>
+        <p className="lede" style={{ maxWidth: '32rem', marginInline: 'auto' }}>
           Thank you, {values.fullName.split(' ')[0] || 'there'}. Your booking has been saved for our team.
-          {tankCount(values.tanks) > 1 ? ` Each tank was saved as its own booking.` : ''}
+          {tankCount(values.tanks) > 1 ? ' Each tank was saved as its own booking.' : ''}
           {hasWhatsApp()
             ? ' If WhatsApp did not open, use the button below to send the same details.'
             : ' Copy the request below and send it to LINFI POLYCLEAN.'}
         </p>
         {whatsappLink && (
-          <Button href={whatsappLink} variant="whatsapp" className="mt-8">
+          <Button href={whatsappLink} variant="whatsapp" style={{ marginTop: '2rem' }}>
             Continue on WhatsApp
           </Button>
         )}
         {!whatsappLink && (
           <Button
-            className="mt-8"
+            style={{ marginTop: '2rem' }}
             onClick={async () => {
               const ok = await copyText(message)
               setCopied(ok)
@@ -203,7 +202,7 @@ export default function BookingForm() {
         )}
         <Button
           variant="ghost"
-          className="mt-3"
+          style={{ marginTop: '0.75rem' }}
           onClick={() => {
             setSuccess(false)
             setCopied(false)
@@ -218,35 +217,29 @@ export default function BookingForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="grid grid-cols-1 gap-5 md:grid-cols-2">
-      <label className="flex flex-col gap-1.5 text-xs font-semibold tracking-wide text-muted uppercase">
+    <form onSubmit={onSubmit} noValidate className="form-grid">
+      <label className="field">
         Full Name *
-        <input className={fieldClass} name="fullName" value={values.fullName} onChange={onChange} autoComplete="name" />
-        {errors.fullName && <span className="font-medium normal-case text-red-600">{errors.fullName}</span>}
+        <input className="input" name="fullName" value={values.fullName} onChange={onChange} autoComplete="name" />
+        {errors.fullName && <span className="field-error">{errors.fullName}</span>}
       </label>
-      <label className="flex flex-col gap-1.5 text-xs font-semibold tracking-wide text-muted uppercase">
+      <label className="field">
         Phone Number *
-        <input className={fieldClass} type="tel" name="phone" value={values.phone} onChange={onChange} autoComplete="tel" />
-        {errors.phone && <span className="font-medium normal-case text-red-600">{errors.phone}</span>}
+        <input className="input" type="tel" name="phone" value={values.phone} onChange={onChange} autoComplete="tel" />
+        {errors.phone && <span className="field-error">{errors.phone}</span>}
       </label>
-      <label className="flex flex-col gap-1.5 text-xs font-semibold tracking-wide text-muted uppercase">
+      <label className="field">
         WhatsApp Number
-        <input className={fieldClass} type="tel" name="whatsapp" value={values.whatsapp} onChange={onChange} autoComplete="tel" />
+        <input className="input" type="tel" name="whatsapp" value={values.whatsapp} onChange={onChange} autoComplete="tel" />
       </label>
-      <label className="flex flex-col gap-1.5 text-xs font-semibold tracking-wide text-muted uppercase">
+      <label className="field">
         Location in Accra *
-        <input
-          className={fieldClass}
-          name="location"
-          value={values.location}
-          onChange={onChange}
-          placeholder="e.g. East Legon, Spintex"
-        />
-        {errors.location && <span className="font-medium normal-case text-red-600">{errors.location}</span>}
+        <input className="input" name="location" value={values.location} onChange={onChange} placeholder="e.g. East Legon, Spintex" />
+        {errors.location && <span className="field-error">{errors.location}</span>}
       </label>
-      <label className="flex flex-col gap-1.5 text-xs font-semibold tracking-wide text-muted uppercase">
+      <label className="field">
         Tank Type
-        <select className={fieldClass} name="tankType" value={values.tankType} onChange={onChange}>
+        <select className="select" name="tankType" value={values.tankType} onChange={onChange}>
           <option value="">Select type</option>
           {tankTypes.map((opt) => (
             <option key={opt} value={opt}>
@@ -255,15 +248,15 @@ export default function BookingForm() {
           ))}
         </select>
       </label>
-      <label className="flex flex-col gap-1.5 text-xs font-semibold tracking-wide text-muted uppercase">
+      <label className="field">
         Number of Tanks
-        <input className={fieldClass} name="tanks" value={values.tanks} onChange={onChange} inputMode="numeric" placeholder="e.g. 1" />
-        <span className="font-medium normal-case text-muted">Each tank is saved as its own booking.</span>
+        <input className="input" name="tanks" value={values.tanks} onChange={onChange} inputMode="numeric" placeholder="e.g. 1" />
+        <span className="field-hint">Each tank is saved as its own booking.</span>
       </label>
       {sizeFieldCount(values.tanks) < 2 ? (
-        <label className="flex flex-col gap-1.5 text-xs font-semibold tracking-wide text-muted uppercase">
+        <label className="field">
           Tank Size
-          <select className={fieldClass} value={values.tankSizesByTank[0] || ''} onChange={(e) => onTankSizeChange(0, e.target.value)}>
+          <select className="select" value={values.tankSizesByTank[0] || ''} onChange={(e) => onTankSizeChange(0, e.target.value)}>
             <option value="">Select size</option>
             {tankSizes.map((opt) => (
               <option key={opt} value={opt}>
@@ -273,11 +266,11 @@ export default function BookingForm() {
           </select>
         </label>
       ) : (
-        <div className="grid grid-cols-1 gap-5 md:col-span-2 md:grid-cols-2">
+        <div className="form-grid form-span">
           {Array.from({ length: sizeFieldCount(values.tanks) }, (_, index) => (
-            <label key={index} className="flex flex-col gap-1.5 text-xs font-semibold tracking-wide text-muted uppercase">
+            <label key={index} className="field">
               Tank {index + 1} size
-              <select className={fieldClass} value={values.tankSizesByTank[index] || ''} onChange={(e) => onTankSizeChange(index, e.target.value)}>
+              <select className="select" value={values.tankSizesByTank[index] || ''} onChange={(e) => onTankSizeChange(index, e.target.value)}>
                 <option value="">Select size</option>
                 {tankSizes.map((opt) => (
                   <option key={opt} value={opt}>
@@ -287,7 +280,7 @@ export default function BookingForm() {
               </select>
             </label>
           ))}
-          <p className="text-sm font-medium normal-case text-muted md:col-span-2">
+          <p className="field-hint form-span">
             Choose a size for each tank if they are different.
             {tankCount(values.tanks) > MAX_TANK_SIZE_FIELDS
               ? ` For tanks after ${MAX_TANK_SIZE_FIELDS}, list the other sizes in Additional Information.`
@@ -295,9 +288,9 @@ export default function BookingForm() {
           </p>
         </div>
       )}
-      <label className="flex flex-col gap-1.5 text-xs font-semibold tracking-wide text-muted uppercase">
+      <label className="field">
         Preferred Week *
-        <select className={fieldClass} name="week" value={values.week} onChange={onChange}>
+        <select className="select" name="week" value={values.week} onChange={onChange}>
           <option value="">Select a week</option>
           {workWeeks.map((week) => (
             <option key={week.value} value={week.label}>
@@ -305,25 +298,23 @@ export default function BookingForm() {
             </option>
           ))}
         </select>
-        {errors.week && <span className="font-medium normal-case text-red-600">{errors.week}</span>}
-        <span className="font-medium normal-case text-muted">
-          Working days are {WORK_DAYS} (Monday off). Each tank is saved as its own booking.
-        </span>
+        {errors.week && <span className="field-error">{errors.week}</span>}
+        <span className="field-hint">Working days are {WORK_DAYS} (Monday off). Each tank is saved as its own booking.</span>
       </label>
-      <label className="flex flex-col gap-1.5 text-xs font-semibold tracking-wide text-muted uppercase">
+      <label className="field">
         Preferred Time
-        <select className={fieldClass} name="time" value={values.time} onChange={onChange}>
+        <select className="select" name="time" value={values.time} onChange={onChange}>
           <option value="">Any time</option>
           <option>Morning (8am – 12pm)</option>
           <option>Afternoon (12pm – 4pm)</option>
           <option>Evening (4pm – 6pm)</option>
         </select>
-        <span className="font-medium normal-case text-muted">We will confirm a day in your chosen week.</span>
+        <span className="field-hint">We will confirm a day in your chosen week.</span>
       </label>
-      <label className="flex flex-col gap-1.5 text-xs font-semibold tracking-wide text-muted uppercase md:col-span-2">
+      <label className="field form-span">
         Additional Information
         <textarea
-          className={`${fieldClass} min-h-28 resize-y`}
+          className="textarea"
           name="extra"
           value={values.extra}
           onChange={onChange}
@@ -331,15 +322,13 @@ export default function BookingForm() {
         />
       </label>
       <input type="hidden" name="service" value={values.service} />
-      {values.service && (
-        <p className="text-sm font-medium text-secondary md:col-span-2">Selected service: {values.service}</p>
-      )}
-      <div className="md:col-span-2">
-        {saveError && <p className="mb-3 text-center text-sm font-medium normal-case text-red-600">{saveError}</p>}
-        <Button type="submit" fullWidth className="rounded-xl py-4" disabled={saving}>
+      {values.service && <p className="field-hint form-span" style={{ color: 'var(--color-secondary)' }}>Selected service: {values.service}</p>}
+      <div className="form-span">
+        {saveError && <p className="field-error" style={{ textAlign: 'center', marginBottom: '0.75rem' }}>{saveError}</p>}
+        <Button type="submit" fullWidth disabled={saving}>
           {saving ? 'Saving booking…' : 'Book a Cleaning'}
         </Button>
-        <p className="mt-3 text-center text-xs text-muted">
+        <p className="field-hint" style={{ textAlign: 'center', marginTop: '0.75rem' }}>
           {hasWhatsApp()
             ? 'Submitting opens WhatsApp with your details so LINFI POLYCLEAN can respond quickly.'
             : 'Submit the form to prepare your request. Add a WhatsApp number in the site contact details before publishing.'}

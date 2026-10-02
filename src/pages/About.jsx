@@ -17,42 +17,49 @@ export default function About() {
       <PageHero
         title="About LINFI POLYCLEAN"
         subtitle="An Accra-based specialist in polytank cleaning and disinfection."
-        image={images.hero}
-        imageAlt="Technician wearing a face mask while cleaning a polytank in Accra"
+        image={images.scrub}
+        imageAlt="Technicians scrubbing and rinsing a water tank"
       />
 
-      <section className="bg-white py-16 md:py-24">
-        <div className="mx-auto max-w-3xl px-4 md:px-10">
-          <Reveal>
+      <section className="bg-white section-pad">
+        <div className="wrap about-story">
+          <Reveal from="left">
             <div>
-            <SectionHeader align="left" eyebrow="Our story" title={aboutStory.heading} />
-            {aboutStory.body.map((para) => (
-              <p key={para.slice(0, 24)} className="mt-4 text-sm leading-relaxed text-muted md:text-base">
-                {para}
-              </p>
-            ))}
+              <SectionHeader align="left" eyebrow="Our story" title={aboutStory.heading} />
+              {aboutStory.body.map((para) => (
+                <p key={para.slice(0, 24)} className="lede">
+                  {para}
+                </p>
+              ))}
+            </div>
+          </Reveal>
+          <Reveal from="right" delay={80}>
+            <div className="intro-photo">
+              <img src={images.team} alt="LINFI POLYCLEAN technicians working on a water tank in a compound" />
             </div>
           </Reveal>
         </div>
       </section>
 
-      <section className="bg-surface py-16 md:py-24">
-        <div className="mx-auto grid max-w-[1200px] gap-6 px-4 md:px-10 md:grid-cols-2">
+      <section className="bg-surface section-pad">
+        <div className="wrap about-grid">
           <Reveal>
-            <div className="h-full rounded-3xl bg-primary p-8 text-white md:p-10">
-              <p className="text-xs font-bold tracking-[0.2em] text-aqua uppercase">Mission</p>
-              <h2 className="font-headline mt-3 text-2xl font-bold">What we work toward every day</h2>
-              <p className="mt-4 text-white/85">
+            <div className="about-card is-dark">
+              <p className="eyebrow eyebrow-aqua">Mission</p>
+              <h2 className="headline" style={{ color: '#fff' }}>
+                What we work toward every day
+              </h2>
+              <p className="mission-copy">
                 To provide professional polytank cleaning and disinfection that helps homes and businesses in Accra
                 maintain cleaner, better-kept water storage tanks.
               </p>
             </div>
           </Reveal>
           <Reveal delay={80}>
-            <div className="h-full rounded-3xl bg-white p-8 shadow-[var(--shadow-card)] md:p-10">
-              <p className="text-xs font-bold tracking-[0.2em] text-secondary uppercase">Vision</p>
-              <h2 className="font-headline mt-3 text-2xl font-bold text-primary">Where we are headed</h2>
-              <p className="mt-4 text-muted">
+            <div className="about-card is-light">
+              <p className="eyebrow">Vision</p>
+              <h2 className="headline">Where we are headed</h2>
+              <p className="lede">
                 To be a trusted Accra name for polytank cleaning — local, reliable, and easy to book.
               </p>
             </div>

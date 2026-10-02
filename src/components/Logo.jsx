@@ -1,9 +1,9 @@
-export default function Logo({ className = 'h-12 w-12' }) {
+export default function Logo({ className = 'logo-nav' }) {
   return (
     <img
       src="/logo.png"
       alt="LINFI Polyclean Enterprise"
-      className={`rounded-xl bg-white object-contain ${className}`}
+      className={`logo ${className}`}
     />
   )
 }

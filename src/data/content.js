@@ -91,6 +91,7 @@ export const services = [
     description:
       'We clean residential and commercial polytanks, removing visible sediment, dirt, sludge, algae and biofilm, then apply professional disinfection procedures to improve tank hygiene. This supports a cleaner storage environment — it is not a guarantee that water is safe to drink on its own.',
     quoteValue: 'Polytank Cleaning & Water Tank Disinfection',
+    image: '/images/work-interior.jpg',
   },
   {
     id: 'residential',
@@ -100,6 +101,7 @@ export const services = [
     description:
       'Polytank cleaning for homes, apartments, compounds, estates and properties with shared water storage systems across Accra. We can schedule around your day and plan sequential cleaning so disruption stays practical.',
     quoteValue: 'Residential, Apartment & Estate Tank Cleaning',
+    image: '/images/work-residential.jpg',
   },
   {
     id: 'commercial',
@@ -109,6 +111,7 @@ export const services = [
     description:
       'Tank cleaning for offices, shops, hotels, restaurants, schools and other businesses, with scheduling that respects your operating hours.',
     quoteValue: 'Commercial Tank Cleaning',
+    image: '/images/work-commercial.jpg',
   },
 ]
 
@@ -303,9 +306,69 @@ export const aboutStory = {
 }
 
 export const images = {
-  hero: '/images/hero-tank-cleaning.png',
-  accra: '/images/accra-neighborhood.png',
+  hero: '/images/hero-tank-cinematic.jpg',
+  accra: '/images/accra-neighborhood.jpg',
+  residential: '/images/work-residential.jpg',
+  commercial: '/images/work-commercial.jpg',
+  interior: '/images/work-interior.jpg',
+  compound: '/images/work-compound.jpg',
+  detail: '/images/work-detail.jpg',
+  team: '/images/technicians-compound.png',
+  scrub: '/images/why-us.jpg',
+  tank: '/images/polytank-hero.jpg',
+  before: '/images/tank-before.png',
+  after: '/images/tank-after.png',
 }
+
+export const gallery = [
+  {
+    src: '/images/hero-tank-cinematic.jpg',
+    alt: 'Technician cleaning rooftop polytanks at golden hour in Accra',
+    label: 'Rooftop cleaning',
+    wide: true,
+  },
+  {
+    src: '/images/work-residential.jpg',
+    alt: 'Residential rooftop polytank being rinsed with a hose',
+    label: 'Home tanks',
+  },
+  {
+    src: '/images/work-commercial.jpg',
+    alt: 'Commercial rooftop water tanks being serviced',
+    label: 'Commercial tanks',
+  },
+  {
+    src: '/images/work-interior.jpg',
+    alt: 'Inside a polytank during professional cleaning',
+    label: 'Inside the tank',
+  },
+  {
+    src: '/images/work-compound.jpg',
+    alt: 'Estate compound with several polytanks',
+    label: 'Estates & compounds',
+  },
+  {
+    src: '/images/technicians-compound.png',
+    alt: 'Two technicians preparing a black water tank in a compound',
+    label: 'On-site team',
+  },
+  {
+    src: '/images/why-us.jpg',
+    alt: 'Technicians scrubbing and rinsing a water tank',
+    label: 'Thorough cleaning',
+  },
+  {
+    src: '/images/work-detail.jpg',
+    alt: 'Close detail of a freshly rinsed tank lid and hose',
+    label: 'The finish',
+  },
+  {
+    src: '/images/accra-neighborhood.jpg',
+    alt: 'Accra residential rooftops with water storage tanks',
+    label: 'Across Accra',
+    wide: true,
+  },
+]
 
 export const mapEmbedSrc =
   'https://maps.google.com/maps?q=Accra%2C%20Ghana&t=&z=11&ie=UTF8&iwloc=&output=embed'

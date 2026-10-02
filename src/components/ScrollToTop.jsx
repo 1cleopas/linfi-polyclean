@@ -13,13 +13,11 @@ export default function ScrollToTop() {
   return (
     <button
       type="button"
-      className={`fixed right-4 bottom-40 z-40 hidden h-11 w-11 items-center justify-center rounded-full bg-primary text-white shadow-lg transition duration-300 hover:bg-primary-soft hover:scale-105 md:bottom-24 md:flex ${
-        visible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'
-      }`}
+      className={`back-top ${visible ? 'is-visible' : ''}`}
       aria-label="Back to top"
       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
     >
-      <ArrowUp className="h-5 w-5" />
+      <ArrowUp className="icon" />
     </button>
   )
 }

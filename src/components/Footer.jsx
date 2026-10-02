@@ -39,33 +39,28 @@ export default function Footer() {
   }
 
   return (
-    <footer className="mt-auto rounded-t-xl bg-primary pb-20 text-white md:pb-0">
-      <div className="mx-auto grid max-w-[1200px] gap-10 px-4 py-14 md:grid-cols-2 md:px-10 lg:grid-cols-4">
-        <div className="lg:col-span-1">
-          <div className="mb-4">
-            <Logo className="h-24 w-24 rounded-2xl p-1 shadow-md" />
+    <footer className="footer">
+      <div className="footer-grid">
+        <div>
+          <div>
+            <Logo className="logo-footer" />
           </div>
-          <p className="font-headline text-sm font-bold">LINFI POLYCLEAN</p>
-          <p className="mt-2 text-sm leading-6 text-white/75">Clean Tank · Safe Life. Professional polytank cleaning &amp; disinfection in Accra.</p>
+          <p className="footer-name">LINFI POLYCLEAN</p>
+          <p>Clean Tank · Safe Life. Professional polytank cleaning &amp; disinfection in Accra.</p>
           {hasWhatsApp() && (
-            <a
-              className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-green-soft hover:text-white"
-              href={whatsappUrl()}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <MessageCircle className="h-4 w-4" aria-hidden="true" />
+            <a className="footer-wa" href={whatsappUrl()} target="_blank" rel="noreferrer">
+              <MessageCircle className="icon-sm" aria-hidden="true" />
               WhatsApp Us
             </a>
           )}
         </div>
 
         <div>
-          <h3 className="mb-4 text-xs font-bold tracking-wider text-aqua uppercase">Quick Links</h3>
-          <ul className="space-y-2">
+          <h3>Quick Links</h3>
+          <ul>
             {navLinks.map((link) => (
               <li key={link.to}>
-                <Link className="text-sm text-white/75 hover:text-white" to={link.to} onClick={() => onHashClick(link.to)}>
+                <Link to={link.to} onClick={() => onHashClick(link.to)}>
                   {link.label}
                 </Link>
               </li>
@@ -74,77 +69,54 @@ export default function Footer() {
         </div>
 
         <div>
-          <h3 className="mb-4 text-xs font-bold tracking-wider text-aqua uppercase">Services</h3>
-          <ul className="space-y-2">
+          <h3>Services</h3>
+          <ul>
             {services.slice(0, 6).map((item) => (
               <li key={item.id}>
-                <Link className="text-sm text-white/75 hover:text-white" to={`/services#${item.id}`}>
-                  {item.name}
-                </Link>
+                <Link to={`/services#${item.id}`}>{item.name}</Link>
               </li>
             ))}
           </ul>
         </div>
 
         <div>
-          <h3 className="mb-4 text-xs font-bold tracking-wider text-aqua uppercase">Contact Information</h3>
-          <ul className="space-y-3 text-sm text-white/75">
-            <li className="flex items-start gap-2">
-              <Phone className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-              {phoneHref() ? (
-                <a className="hover:text-white" href={phoneHref()}>
-                  {company.phone}
-                </a>
-              ) : (
-                <span>{company.phone}</span>
-              )}
+          <h3>Contact Information</h3>
+          <ul>
+            <li className="contact-row">
+              <Phone className="icon-sm" aria-hidden="true" />
+              {phoneHref() ? <a href={phoneHref()}>{company.phone}</a> : <span>{company.phone}</span>}
             </li>
-            <li className="flex items-start gap-2">
-              <MessageCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <li className="contact-row">
+              <MessageCircle className="icon-sm" aria-hidden="true" />
               {hasWhatsApp() ? (
-                <a className="hover:text-white" href={whatsappUrl()} target="_blank" rel="noreferrer">
+                <a href={whatsappUrl()} target="_blank" rel="noreferrer">
                   {company.whatsapp}
                 </a>
               ) : (
                 <span>{company.whatsapp}</span>
               )}
             </li>
-            <li className="flex items-start gap-2">
-              <Mail className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-              {emailHref() ? (
-                <a className="hover:text-white" href={emailHref()}>
-                  {company.email}
-                </a>
-              ) : (
-                <span>{company.email}</span>
-              )}
+            <li className="contact-row">
+              <Mail className="icon-sm" aria-hidden="true" />
+              {emailHref() ? <a href={emailHref()}>{company.email}</a> : <span>{company.email}</span>}
             </li>
-            <li className="flex items-start gap-2">
-              <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <li className="contact-row">
+              <MapPin className="icon-sm" aria-hidden="true" />
               <span>{company.serviceArea}</span>
             </li>
           </ul>
           {socialLinks.length > 0 && (
-            <div className="mt-5 flex gap-3">
+            <div className="socials">
               {socialLinks.map(({ label, href }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label={label}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-secondary"
-                >
-                  <SocialIcon name={label} className="h-4 w-4" />
+                <a key={label} href={href} target="_blank" rel="noreferrer" aria-label={label}>
+                  <SocialIcon name={label} className="icon-sm" />
                 </a>
               ))}
             </div>
           )}
         </div>
       </div>
-      <div className="border-t border-white/10 px-4 py-5 text-center text-xs text-white/60 md:px-10">
-        © {new Date().getFullYear()} LINFI POLYCLEAN. All rights reserved.
-      </div>
+      <div className="footer-copy">© {new Date().getFullYear()} LINFI POLYCLEAN. All rights reserved.</div>
     </footer>
   )
 }

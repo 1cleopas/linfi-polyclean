@@ -8,22 +8,13 @@ import {
   whatsappUrl,
 } from '../data/content'
 
-const cardClass = 'flex gap-4 rounded-2xl bg-white p-4 shadow-[var(--shadow-card)]'
-const iconWrapClass = 'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface text-primary'
-const valueClass = 'font-semibold text-primary'
-
 function Value({ href, external, children }) {
   if (!href) {
-    return <p className={valueClass}>{children}</p>
+    return <p className="field-title">{children}</p>
   }
 
   return (
-    <a
-      className={`${valueClass} hover:text-secondary`}
-      href={href}
-      target={external ? '_blank' : undefined}
-      rel={external ? 'noreferrer' : undefined}
-    >
+    <a href={href} target={external ? '_blank' : undefined} rel={external ? 'noreferrer' : undefined}>
       {children}
     </a>
   )
@@ -45,14 +36,14 @@ export default function ContactDetails() {
   ].filter(Boolean)
 
   return (
-    <ul className="mt-8 space-y-4">
+    <ul className="contact-list">
       {items.map(({ icon: Icon, label, value, href, external }) => (
-        <li key={label} className={cardClass}>
-          <span className={iconWrapClass}>
-            <Icon className="h-5 w-5" aria-hidden="true" />
+        <li key={label} className="contact-card">
+          <span className="contact-icon">
+            <Icon className="icon" aria-hidden="true" />
           </span>
           <div>
-            <p className="text-xs font-bold tracking-wider text-muted uppercase">{label}</p>
+            <p className="eyebrow">{label}</p>
             <Value href={href} external={external}>
               {value}
             </Value>

@@ -23,36 +23,35 @@ export default function Pricing() {
         imageAlt="Accra residential neighborhood where Linfi Polyclean provides polytank cleaning"
       />
 
-      <section className="bg-surface py-16 md:py-24">
-        <div className="mx-auto max-w-[1200px] px-4 md:px-10">
+      <section className="bg-surface section-pad">
+        <div className="wrap">
           <Reveal>
-          <SectionHeader
-            title="What can affect the price?"
-            subtitle="Share these details when you book so we can confirm a clear amount."
-          />
+            <SectionHeader
+              title="What can affect the price?"
+              subtitle="Share these details when you book so we can confirm a clear amount."
+            />
           </Reveal>
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="price-grid">
             {pricingFactors.map((item, i) => (
               <Reveal key={item} delay={i * 60} from="scale">
-              <li
-                className="h-full rounded-2xl border border-outline/30 bg-white p-6 font-semibold text-primary shadow-[var(--shadow-card)] transition duration-300 hover:-translate-y-1 hover:border-secondary/50 hover:shadow-[var(--shadow-lift)]"
-              >
-                {item}
-              </li>
+                <li className="price-card">{item}</li>
               </Reveal>
             ))}
           </ul>
 
           <Reveal>
-          <div className="mt-12 rounded-3xl bg-primary p-8 text-center text-white md:p-12">
-            <h2 className="font-headline text-2xl font-bold md:text-3xl">Book a Cleaning</h2>
-            <p className="mx-auto mt-3 max-w-xl text-white/80">
-              Share tank size, number of tanks, location in Accra and access notes. We will confirm availability and your price.
-            </p>
-            <Button variant="light" className="mt-8" onClick={() => openQuote()}>
-              Book a Cleaning
-            </Button>
-          </div>
+            <div className="price-band" style={{ marginTop: '3rem', textAlign: 'center' }}>
+              <h2 className="headline" style={{ color: '#fff' }}>
+                Book a Cleaning
+              </h2>
+              <p style={{ maxWidth: '36rem', margin: '0.75rem auto 0', color: 'rgb(255 255 255 / 0.8)' }}>
+                Share tank size, number of tanks, location in Accra and access notes. We will confirm availability and
+                your price.
+              </p>
+              <Button variant="light" style={{ marginTop: '2rem' }} onClick={() => openQuote()}>
+                Book a Cleaning
+              </Button>
+            </div>
           </Reveal>
         </div>
       </section>

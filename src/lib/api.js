@@ -55,10 +55,6 @@ export function wakeAdminApi() {
   return fetch('/api/health').catch(() => null)
 }
 
-export function adminLoginCode(challengeId, code) {
-  return request('/api/admin/login/code', { method: 'POST', body: { challengeId, code } })
-}
-
 export function listAdminJobs() {
   return request('/api/admin/jobs', { auth: true })
 }

@@ -4,17 +4,17 @@ import Seo from '../components/Seo'
 
 export default function NotFound() {
   return (
-    <section className="anim-fade-up flex min-h-[60vh] flex-col items-center justify-center px-4 py-20 text-center">
+    <section className="not-found anim-fade-up">
       <Seo title="Page not found | Linfi Polyclean" description="The page you requested does not exist." path="/404" />
-      <p className="text-sm font-bold tracking-widest text-secondary uppercase">404</p>
-      <h1 className="font-headline mt-3 text-3xl font-bold text-primary">This page does not exist</h1>
-      <p className="mt-3 max-w-md text-muted">The link may be outdated. Head back home or book a tank cleaning from the homepage.</p>
-      <div className="mt-8">
+      <p className="eyebrow">404</p>
+      <h1 className="headline">This page does not exist</h1>
+      <p className="lede" style={{ maxWidth: '28rem' }}>
+        The link may be outdated. Head back home or book a tank cleaning from the homepage.
+      </p>
+      <div style={{ marginTop: '2rem' }}>
         <Button to="/">Back to Home</Button>
       </div>
-      <Link to="/#contact" className="mt-4 text-sm font-semibold text-secondary">
-        Contact us
-      </Link>
+      <Link to="/#contact">Contact us</Link>
     </section>
   )
 }

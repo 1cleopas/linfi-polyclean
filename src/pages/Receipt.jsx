@@ -86,9 +86,9 @@ export default function Receipt() {
 
   if (error) {
     return (
-      <main className="mx-auto max-w-lg px-4 py-16 text-center">
-        <p className="text-red-600">{error}</p>
-        <Link className="mt-4 inline-block font-semibold text-secondary" to="/admin">
+      <main className="receipt-page" style={{ textAlign: 'center' }}>
+        <p className="field-error">{error}</p>
+        <Link className="field-title" to="/admin" style={{ display: 'inline-block', marginTop: '1rem', color: 'var(--color-secondary)' }}>
           Back to dashboard
         </Link>
       </main>
@@ -96,7 +96,7 @@ export default function Receipt() {
   }
 
   if (!jobs) {
-    return <main className="px-4 py-16 text-center text-muted">Loading receipt…</main>
+    return <main className="receipt-page" style={{ textAlign: 'center' }}>Loading receipt…</main>
   }
 
   const job = jobs[0]
@@ -128,8 +128,6 @@ export default function Receipt() {
     const file = new File([blob], filename, { type: 'application/pdf' })
     const caption = `Receipt ${number} for ${job.fullName}${jobs.length > 1 ? ` (${jobs.length} tanks)` : ''}`
 
-    // Share the PDF first. Opening wa.me before this leaves an empty chat,
-    // because a WhatsApp link cannot carry a file.
     if (navigator.canShare?.({ files: [file] })) {
       try {
         await navigator.share({ files: [file], title: filename, text: caption })
@@ -156,9 +154,9 @@ export default function Receipt() {
   }
 
   return (
-    <main className="min-h-screen bg-surface px-4 py-8 print:bg-white print:p-0">
-      <div className="mx-auto max-w-2xl">
-        <div className="mb-4 flex flex-wrap gap-2 print:hidden">
+    <main className="receipt-page">
+      <div className="wrap" style={{ maxWidth: '42rem' }}>
+        <div className="receipt-actions">
           <Button type="button" onClick={() => window.print()}>
             Print receipt
           </Button>
@@ -167,59 +165,53 @@ export default function Receipt() {
               Send PDF on WhatsApp
             </Button>
           )}
-          {shareNote && <p className="w-full text-sm text-muted">{shareNote}</p>}
+          {shareNote && <p className="field-hint" style={{ width: '100%' }}>{shareNote}</p>}
           <Button variant="outline" to="/admin">
             Back to dashboard
           </Button>
         </div>
 
-        <article className="relative overflow-hidden rounded-3xl bg-white p-8 shadow-[var(--shadow-card)] print:rounded-none print:shadow-none">
-          <img
-            src="/logo.png"
-            alt=""
-            className="pointer-events-none absolute top-1/2 left-1/2 w-[78%] max-w-md -translate-x-1/2 -translate-y-1/2 opacity-25 select-none"
-          />
-          <div className="relative">
-          <div className="flex items-start justify-between gap-4 border-b border-outline/40 pb-6">
-            <div>
-              <img src="/logo.png" alt="" className="h-16 w-16 rounded-xl object-contain" />
-              <h1 className="font-headline mt-3 text-2xl font-bold text-primary">{company.name}</h1>
-              <p className="text-sm text-muted">{company.tagline}</p>
-              <p className="mt-2 text-sm text-muted">
-                {company.phone}
-                <br />
-                {company.email}
-                <br />
-                {company.serviceArea}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs font-bold tracking-[0.2em] text-secondary uppercase">Receipt</p>
-              <p className="font-headline mt-1 text-lg font-bold text-primary">{number}</p>
-              <p className="mt-1 text-sm text-muted">{formatDate(job.updatedAt || job.createdAt)}</p>
-              <p className={`mt-3 inline-block rounded-full px-3 py-1 text-xs font-bold ${paid ? 'bg-green/15 text-green' : 'bg-surface text-primary'}`}>
-                {paid ? 'Paid' : 'Unpaid'}
-              </p>
-            </div>
-          </div>
-
-          <dl className="mt-6 divide-y divide-outline/30">
-            {rows.map(([label, value]) => (
-              <div key={label} className="flex justify-between gap-4 py-3 text-sm">
-                <dt className="text-muted">{label}</dt>
-                <dd className="text-right font-semibold text-primary">{value}</dd>
+        <article className="receipt-card">
+          <img src="/logo.png" alt="" className="receipt-mark" />
+          <div className="receipt-body">
+            <div className="receipt-head">
+              <div>
+                <img src="/logo.png" alt="" className="receipt-logo" />
+                <h1 className="headline" style={{ marginTop: '0.75rem', fontSize: '1.5rem' }}>{company.name}</h1>
+                <p className="field-hint">{company.tagline}</p>
+                <p className="field-hint" style={{ marginTop: '0.5rem' }}>
+                  {company.phone}
+                  <br />
+                  {company.email}
+                  <br />
+                  {company.serviceArea}
+                </p>
               </div>
-            ))}
-          </dl>
+              <div style={{ textAlign: 'right' }}>
+                <p className="eyebrow">Receipt</p>
+                <p className="headline" style={{ fontSize: '1.125rem' }}>{number}</p>
+                <p className="field-hint">{formatDate(job.updatedAt || job.createdAt)}</p>
+                <p className={`paid-pill ${paid ? 'is-paid' : ''}`}>{paid ? 'Paid' : 'Unpaid'}</p>
+              </div>
+            </div>
 
-          <div className="mt-6 flex items-center justify-between rounded-2xl bg-surface px-5 py-4">
-            <p className="text-sm font-semibold text-muted">Amount</p>
-            <p className="font-headline text-2xl font-bold text-primary">{formatCedis(amount)}</p>
-          </div>
+            <dl className="receipt-rows">
+              {rows.map(([label, value]) => (
+                <div key={label}>
+                  <dt className="muted">{label}</dt>
+                  <dd style={{ margin: 0, textAlign: 'right', fontWeight: 600, color: 'var(--color-primary)' }}>{value}</dd>
+                </div>
+              ))}
+            </dl>
 
-          <p className="mt-6 text-xs leading-5 text-muted">
-            Prices may vary due to location and tank position. This receipt covers every tank booked for this customer in the same week.
-          </p>
+            <div className="receipt-total">
+              <p className="field-hint" style={{ fontWeight: 600, margin: 0 }}>Amount</p>
+              <p className="headline" style={{ margin: 0 }}>{formatCedis(amount)}</p>
+            </div>
+
+            <p className="field-hint" style={{ marginTop: '1.5rem', lineHeight: 1.5 }}>
+              Prices may vary due to location and tank position. This receipt covers every tank booked for this customer in the same week.
+            </p>
           </div>
         </article>
       </div>

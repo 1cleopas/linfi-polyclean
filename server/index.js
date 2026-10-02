@@ -1,15 +1,36 @@
 import { rootDir } from './loadEnv.js'
 import express from 'express'
 import { existsSync } from 'node:fs'
-import { createHmac, timingSafeEqual } from 'node:crypto'
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import { join } from 'node:path'
-import { checkSignInCode, issueSignInCode } from './otp.js'
-import { clientIp, passwordMatches, securityHeaders, tooMany } from './security.js'
 import { countWeekBookings, createJob, createJobs, deleteJob, jobsFilePath, listJobs, replaceAllJobs, updateJob } from './store.js'
 
 const app = express()
 const adminPassword = process.env.ADMIN_PASSWORD || 'linfi-admin'
 const SESSION_MS = 1000 * 60 * 60 * 24 * 14
+const buckets = new Map()
+
+function clientIp(req) {
+  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim()
+  return forwarded || req.socket?.remoteAddress || 'unknown'
+}
+
+function tooMany(key, { max, windowMs }) {
+  const now = Date.now()
+  const item = buckets.get(key)
+  if (!item || now - item.start > windowMs) {
+    buckets.set(key, { start: now, count: 1 })
+    return false
+  }
+  item.count += 1
+  return item.count > max
+}
+
+function passwordMatches(given, expected) {
+  const left = createHash('sha256').update(String(given || '')).digest()
+  const right = createHash('sha256').update(String(expected || '')).digest()
+  return timingSafeEqual(left, right)
+}
 
 function signSession() {
   const payload = Buffer.from(JSON.stringify({ exp: Date.now() + SESSION_MS, v: 4 })).toString('base64url')
@@ -32,11 +53,11 @@ function hasValidSession(token) {
     return false
   }
 }
+
 const port = Number(process.env.PORT) || 3000
 
 app.disable('x-powered-by')
 app.set('trust proxy', 1)
-app.use(securityHeaders)
 app.use(express.json({ limit: '200kb' }))
 app.use((error, _req, res, next) => {
   if (error instanceof SyntaxError) {
@@ -105,7 +126,7 @@ app.post('/api/bookings', (req, res) => {
   }
 })
 
-app.post('/api/admin/login', async (req, res) => {
+app.post('/api/admin/login', (req, res) => {
   const ip = clientIp(req)
   if (!passwordMatches(req.body?.password, adminPassword)) {
     if (tooMany(`login:${ip}`, { max: 8, windowMs: 15 * 60 * 1000 })) {
@@ -115,26 +136,7 @@ app.post('/api/admin/login', async (req, res) => {
     res.status(401).json({ error: 'Wrong password.' })
     return
   }
-  try {
-    const { challengeId } = await issueSignInCode()
-    res.json({ challengeId })
-  } catch (error) {
-    res.status(error.code === 'RATE' ? 429 : 503).json({ error: error.message })
-  }
-})
-
-app.post('/api/admin/login/code', (req, res) => {
-  const ip = clientIp(req)
-  if (tooMany(`code:${ip}`, { max: 8, windowMs: 15 * 60 * 1000 })) {
-    res.status(429).json({ error: 'Too many sign-in attempts. Wait a few minutes and try again.' })
-    return
-  }
-  try {
-    checkSignInCode(req.body?.challengeId, req.body?.code)
-    res.json({ token: signSession() })
-  } catch (error) {
-    res.status(401).json({ error: error.message })
-  }
+  res.json({ token: signSession() })
 })
 
 app.get('/api/admin/jobs', requireAdmin, (_req, res) => {

@@ -68,28 +68,27 @@ export default function ContactForm() {
     }
   }
 
-  const fieldClass =
-    'mt-1 w-full rounded-lg border border-outline/70 bg-surface px-3 py-3 text-base text-ink outline-none transition focus:border-secondary focus:ring-1 focus:ring-secondary'
-
   if (success) {
     const message = contactMessage(values)
     return (
-      <div className="rounded-2xl border border-outline/30 bg-white p-8 text-center shadow-[var(--shadow-card)]">
-        <CircleCheckBig className="mx-auto h-12 w-12 text-green" aria-hidden="true" />
-        <h3 className="font-headline mt-4 text-lg font-bold text-primary">Message ready</h3>
-        <p className="mt-2 text-sm leading-relaxed text-muted">
+      <div className="success-card">
+        <CircleCheckBig className="icon-success" aria-hidden="true" />
+        <h3 className="headline" style={{ fontSize: '1.125rem', marginTop: '1rem' }}>
+          Message ready
+        </h3>
+        <p className="lede">
           {hasWhatsApp()
             ? 'If WhatsApp did not open, use the button below so our team can reply.'
             : 'Copy the message and send it to LINFI POLYCLEAN once a WhatsApp number is added.'}
         </p>
         {whatsappLink && (
-          <Button href={whatsappLink} variant="whatsapp" className="mt-6">
+          <Button href={whatsappLink} variant="whatsapp" style={{ marginTop: '1.5rem' }}>
             Continue on WhatsApp
           </Button>
         )}
         {!whatsappLink && (
           <Button
-            className="mt-6"
+            style={{ marginTop: '1.5rem' }}
             onClick={async () => {
               const ok = await copyText(message)
               setCopied(ok)
@@ -100,7 +99,7 @@ export default function ContactForm() {
         )}
         <Button
           variant="ghost"
-          className="mt-3"
+          style={{ marginTop: '0.75rem' }}
           onClick={() => {
             setSuccess(false)
             setCopied(false)
@@ -115,31 +114,31 @@ export default function ContactForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="rounded-2xl border border-outline/30 bg-white p-6 shadow-[var(--shadow-card)]">
-      <div className="grid gap-4">
-        <label className="text-sm font-semibold text-primary">
+    <form onSubmit={onSubmit} noValidate className="form-card">
+      <div className="form-grid" style={{ gridTemplateColumns: '1fr' }}>
+        <label className="field field-title">
           Full Name
-          <input className={fieldClass} name="fullName" value={values.fullName} onChange={onChange} autoComplete="name" />
-          {errors.fullName && <span className="mt-1 block text-xs font-medium text-red-600">{errors.fullName}</span>}
+          <input className="input" name="fullName" value={values.fullName} onChange={onChange} autoComplete="name" />
+          {errors.fullName && <span className="field-error">{errors.fullName}</span>}
         </label>
-        <label className="text-sm font-semibold text-primary">
+        <label className="field field-title">
           Phone Number
-          <input className={fieldClass} type="tel" name="phone" value={values.phone} onChange={onChange} autoComplete="tel" />
-          {errors.phone && <span className="mt-1 block text-xs font-medium text-red-600">{errors.phone}</span>}
+          <input className="input" type="tel" name="phone" value={values.phone} onChange={onChange} autoComplete="tel" />
+          {errors.phone && <span className="field-error">{errors.phone}</span>}
         </label>
-        <label className="text-sm font-semibold text-primary">
+        <label className="field field-title">
           Email
-          <input className={fieldClass} type="email" name="email" value={values.email} onChange={onChange} autoComplete="email" />
-          {errors.email && <span className="mt-1 block text-xs font-medium text-red-600">{errors.email}</span>}
+          <input className="input" type="email" name="email" value={values.email} onChange={onChange} autoComplete="email" />
+          {errors.email && <span className="field-error">{errors.email}</span>}
         </label>
-        <label className="text-sm font-semibold text-primary">
+        <label className="field field-title">
           Location in Accra
-          <input className={fieldClass} name="location" value={values.location} onChange={onChange} placeholder="e.g. Labone" />
+          <input className="input" name="location" value={values.location} onChange={onChange} placeholder="e.g. Labone" />
         </label>
-        <label className="text-sm font-semibold text-primary">
+        <label className="field field-title">
           Message
-          <textarea className={`${fieldClass} min-h-28 resize-y`} name="message" value={values.message} onChange={onChange} />
-          {errors.message && <span className="mt-1 block text-xs font-medium text-red-600">{errors.message}</span>}
+          <textarea className="textarea" name="message" value={values.message} onChange={onChange} />
+          {errors.message && <span className="field-error">{errors.message}</span>}
         </label>
         <Button type="submit" fullWidth>
           Send Message

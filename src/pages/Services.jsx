@@ -36,40 +36,32 @@ export default function Services() {
       <PageHero
         title="Our Services"
         subtitle="Polytank cleaning, disinfection, and tank work for homes, apartments, estates and businesses."
-        image={images.hero}
-        imageAlt="Technician cleaning a polytank in Accra"
+        image={images.compound}
+        imageAlt="Polytanks at a residential compound in Accra"
       />
 
-      <div className="bg-surface py-16 md:py-24">
-        <div className="mx-auto flex max-w-[1200px] flex-col gap-10 px-4 md:px-10">
+      <div className="bg-surface section-pad">
+        <div className="wrap service-rows">
           {services.map((service, index) => {
             const Icon = icons[service.icon] || Sparkles
             const reverse = index % 2 === 1
             return (
               <Reveal key={service.id} from={reverse ? 'right' : 'left'}>
-              <article
-                id={service.id}
-                className="scroll-mt-28 grid items-center gap-8 overflow-hidden rounded-3xl bg-white shadow-[var(--shadow-card)] transition duration-500 hover:shadow-[var(--shadow-lift)] lg:grid-cols-2"
-              >
-                <div className={`group relative h-64 overflow-hidden lg:h-full ${reverse ? 'lg:order-2' : ''}`}>
-                  <img
-                    src={images.hero}
-                    alt={`${service.name} in Accra by LINFI POLYCLEAN`}
-                    className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                </div>
-                <div className="p-6 md:p-10">
-                  <span className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-surface text-primary">
-                    <Icon className="h-6 w-6" aria-hidden="true" />
-                  </span>
-                  <h2 className="font-headline text-2xl font-bold text-primary md:text-3xl">{service.name}</h2>
-                  <p className="mt-3 text-sm leading-relaxed text-muted md:text-base">{service.description}</p>
-                  <Button className="mt-6" onClick={() => openQuote({ service: service.quoteValue })}>
-                    Book This Service
-                  </Button>
-                </div>
-              </article>
+                <article id={service.id} className={`service-row ${reverse ? 'is-reverse' : ''}`}>
+                  <div className="service-row-media">
+                    <img src={service.image || images.hero} alt={`${service.name} in Accra by LINFI POLYCLEAN`} loading="lazy" />
+                  </div>
+                  <div className="service-row-copy">
+                    <span className="service-row-icon">
+                      <Icon className="icon-lg" aria-hidden="true" />
+                    </span>
+                    <h2 className="headline">{service.name}</h2>
+                    <p className="lede">{service.description}</p>
+                    <Button style={{ marginTop: '1.5rem' }} onClick={() => openQuote({ service: service.quoteValue })}>
+                      Book This Service
+                    </Button>
+                  </div>
+                </article>
               </Reveal>
             )
           })}
