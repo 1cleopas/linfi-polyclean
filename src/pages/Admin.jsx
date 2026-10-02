@@ -324,7 +324,7 @@ export default function Admin() {
           <p className="text-xs font-bold tracking-[0.2em] text-secondary uppercase">Manager</p>
           <h1 className="font-headline mt-2 text-2xl font-bold text-primary">LINFI POLYCLEAN</h1>
           <p className="mt-2 text-sm text-muted">
-            Every sign-in needs the manager password and a 6-digit code sent to the recovery email. Tap Send sign-in code first, then enter the code from the email.
+            Every sign-in needs the manager password and a 6-digit code sent to the manager phone. Tap Send sign-in code first, then enter the code from the text message.
           </p>
           <label className="mt-6 block text-sm font-semibold text-primary">
             Password
@@ -360,13 +360,13 @@ export default function Admin() {
               autoComplete="one-time-code"
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="6 digits from email"
+              placeholder="6 digits from phone"
             />
           </label>
           {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
           {challengeId && (
             <p className="mt-3 text-sm text-muted">
-              A code is on its way to the recovery email. It can take a few seconds to arrive, and it expires in 10 minutes.
+              A code is on its way to the manager phone. It can take a few seconds to arrive, and it expires in 10 minutes.
             </p>
           )}
           <div className="mt-6 flex flex-col gap-3">

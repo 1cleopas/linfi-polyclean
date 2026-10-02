@@ -1,5 +1,4 @@
 import { createHmac, randomBytes, randomInt, timingSafeEqual } from 'node:crypto'
-import nodemailer from 'nodemailer'
 
 const TTL_MS = 10 * 60 * 1000
 const MAX_ATTEMPTS = 5
@@ -13,16 +12,16 @@ function secret() {
   return process.env.ADMIN_PASSWORD || 'linfi-admin'
 }
 
-function recoveryEmail() {
-  return String(process.env.ADMIN_OTP_EMAIL || 'obbolinus5050@gmail.com').trim()
+function recoveryPhone() {
+  return toE164(process.env.ADMIN_OTP_PHONE || '0241915966')
 }
 
-function smtpUser() {
-  return String(process.env.SMTP_USER || '').trim()
-}
-
-function smtpPass() {
-  return String(process.env.SMTP_PASS || '').replace(/\s/g, '')
+function toE164(value) {
+  let digits = String(value || '').replace(/\D/g, '')
+  if (digits.startsWith('00')) digits = digits.slice(2)
+  if (digits.startsWith('0') && digits.length === 10) digits = `233${digits.slice(1)}`
+  if (digits.length === 9) digits = `233${digits}`
+  return digits
 }
 
 function isLive() {
@@ -39,71 +38,94 @@ function withinSendLimit() {
   return sendTimes.length < MAX_SENDS
 }
 
-function mailError(message) {
+function smsError(message) {
   const error = new Error(message)
   error.code = 'MAIL'
   return error
 }
 
-async function deliver(code) {
-  const to = recoveryEmail()
-  const user = smtpUser()
-  const pass = smtpPass()
+function smsConfigured() {
+  return Boolean(
+    (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_FROM) ||
+      (process.env.AFRICASTALKING_USERNAME && process.env.AFRICASTALKING_API_KEY),
+  )
+}
 
-  if (!user || !pass) {
+async function sendTwilio(to, text) {
+  const sid = String(process.env.TWILIO_ACCOUNT_SID || '').trim()
+  const token = String(process.env.TWILIO_AUTH_TOKEN || '').trim()
+  const from = String(process.env.TWILIO_FROM || '').trim()
+  const auth = Buffer.from(`${sid}:${token}`).toString('base64')
+  const body = new URLSearchParams({
+    To: `+${to}`,
+    From: from,
+    Body: text,
+  })
+  const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${auth}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body,
+  })
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}))
+    throw new Error(data.message || `Twilio ${response.status}`)
+  }
+}
+
+async function sendAfricaTalking(to, text) {
+  const username = String(process.env.AFRICASTALKING_USERNAME || '').trim()
+  const apiKey = String(process.env.AFRICASTALKING_API_KEY || '').trim()
+  const from = String(process.env.AFRICASTALKING_FROM || '').trim()
+  const body = new URLSearchParams({
+    username,
+    to: `+${to}`,
+    message: text,
+  })
+  if (from) body.set('from', from)
+  const response = await fetch('https://api.africastalking.com/version1/messaging', {
+    method: 'POST',
+    headers: {
+      apiKey,
+      Accept: 'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body,
+  })
+  if (!response.ok) {
+    const data = await response.text()
+    throw new Error(data || `Africa's Talking ${response.status}`)
+  }
+}
+
+async function deliver(code) {
+  const to = recoveryPhone()
+  if (!to || to.length < 10) {
+    throw smsError('The manager phone number is not set. Add ADMIN_OTP_PHONE on the server.')
+  }
+
+  const text = `LINFI POLYCLEAN manager sign-in code: ${code}. It expires in 10 minutes.`
+
+  if (!smsConfigured()) {
     if (isLive()) {
-      throw mailError('Mail is not set up on the live site. Add SMTP_USER and SMTP_PASS on the server, save, then try again.')
+      throw smsError('Text messages are not set up on the live site. Add Twilio or Africa\'s Talking keys, then try again.')
     }
-    console.log(`Manager sign-in code for ${to}: ${code}`)
+    console.log(`Manager sign-in code for +${to}: ${code}`)
     return
   }
 
-  const mail = {
-    from: `LINFI POLYCLEAN <${user}>`,
-    to,
-    subject: 'Manager sign-in code',
-    text: `Your LINFI POLYCLEAN manager sign-in code is ${code}.\n\nIt expires in 10 minutes.\n\nIf you did not try to open the dashboard, you can ignore this email.`,
-  }
-
-  const setups = [
-    {
-      service: 'gmail',
-      auth: { user, pass },
-      connectionTimeout: 10000,
-      greetingTimeout: 8000,
-      socketTimeout: 15000,
-    },
-    {
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      requireTLS: true,
-      auth: { user, pass },
-      connectionTimeout: 10000,
-      greetingTimeout: 8000,
-      socketTimeout: 15000,
-    },
-  ]
-
-  let lastMessage = ''
-  for (const options of setups) {
-    const transport = nodemailer.createTransport(options)
-    try {
-      await transport.sendMail(mail)
-      transport.close()
+  try {
+    if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_FROM) {
+      await sendTwilio(to, text)
       return
-    } catch (err) {
-      lastMessage = err?.message || String(err)
-      try {
-        transport.close()
-      } catch {
-        // Ignore close errors after a failed send.
-      }
     }
+    await sendAfricaTalking(to, text)
+  } catch (err) {
+    console.error('Sign-in SMS failed:', err.message)
+    throw smsError('The sign-in code could not be sent to the phone. Check the SMS settings and try again.')
   }
-
-  console.error('Sign-in email failed:', lastMessage)
-  throw mailError('Gmail could not send the sign-in code. Check SMTP_USER and the 16-letter app password (no spaces), then try again.')
 }
 
 export async function issueSignInCode() {
