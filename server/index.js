@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs'
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import { join } from 'node:path'
 import { countWeekBookings, createJob, createJobs, deleteJob, jobsFilePath, listJobs, replaceAllJobs, updateJob } from './store.js'
+import { createWorker, deleteWorker, listWorkers, updateWorker, workersFilePath } from './workers.js'
 
 const app = express()
 const adminPassword = process.env.ADMIN_PASSWORD || 'linfi-admin'
@@ -128,7 +129,7 @@ app.post('/api/bookings', (req, res) => {
 
 app.post('/api/admin/login', (req, res) => {
   const ip = clientIp(req)
-  if (!passwordMatches(req.body?.password, adminPassword)) {
+  if (!passwordMatches(String(req.body?.password || '').trim(), adminPassword)) {
     if (tooMany(`login:${ip}`, { max: 8, windowMs: 15 * 60 * 1000 })) {
       res.status(429).json({ error: 'Too many sign-in attempts. Wait a few minutes and try again.' })
       return
@@ -190,6 +191,40 @@ app.delete('/api/admin/jobs/:id', requireAdmin, (req, res) => {
   res.status(204).end()
 })
 
+app.get('/api/admin/workers', requireAdmin, (_req, res) => {
+  res.json({ workers: listWorkers() })
+})
+
+app.post('/api/admin/workers', requireAdmin, (req, res) => {
+  try {
+    const worker = createWorker(req.body || {})
+    res.status(201).json({ worker })
+  } catch (error) {
+    res.status(400).json({ error: error.message })
+  }
+})
+
+app.patch('/api/admin/workers/:id', requireAdmin, (req, res) => {
+  try {
+    const worker = updateWorker(req.params.id, req.body || {})
+    if (!worker) {
+      res.status(404).json({ error: 'Worker not found.' })
+      return
+    }
+    res.json({ worker })
+  } catch (error) {
+    res.status(400).json({ error: error.message })
+  }
+})
+
+app.delete('/api/admin/workers/:id', requireAdmin, (req, res) => {
+  if (!deleteWorker(req.params.id)) {
+    res.status(404).json({ error: 'Worker not found.' })
+    return
+  }
+  res.status(204).end()
+})
+
 const dist = join(rootDir, 'dist')
 const indexFile = join(dist, 'index.html')
 if (existsSync(indexFile)) {
@@ -202,4 +237,5 @@ if (existsSync(indexFile)) {
 app.listen(port, '0.0.0.0', () => {
   console.log(`LINFI POLYCLEAN server listening on 0.0.0.0:${port}`)
   console.log(`Job file: ${jobsFilePath()}`)
+  console.log(`Worker file: ${workersFilePath()}`)
 })

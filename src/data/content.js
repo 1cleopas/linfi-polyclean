@@ -319,6 +319,10 @@ export const images = {
   after: '/images/tank-after.png',
 }
 
+export const videos = {
+  work: '/videos/work.mp4',
+}
+
 export const gallery = [
   {
     src: '/images/hero-tank-cinematic.jpg',

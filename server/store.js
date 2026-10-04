@@ -93,6 +93,7 @@ function buildJob(input, now) {
     amount: input.amount === '' || input.amount == null ? null : Number(input.amount),
     notes: String(input.notes || '').trim(),
     source: input.source || 'website',
+    workerId: String(input.workerId || '').trim(),
   }
 
   if (Number.isNaN(job.amount)) job.amount = null
@@ -147,6 +148,7 @@ export function updateJob(id, patch) {
     next.amount = patch.amount === '' || patch.amount == null ? null : Number(patch.amount)
     if (Number.isNaN(next.amount)) next.amount = null
   }
+  if (patch.workerId !== undefined) next.workerId = String(patch.workerId || '').trim()
 
   jobs[index] = next
   writeJobs(jobs)

@@ -2,6 +2,7 @@ import { accraAreas, company, images, mapEmbedSrc, pricingFactors, testimonials 
 import Hero from '../components/Hero'
 import ProblemAwareness from '../components/ProblemAwareness'
 import BeforeAfter from '../components/BeforeAfter'
+import WorkVideo from '../components/WorkVideo'
 import WorkGallery from '../components/WorkGallery'
 import { ServicesGrid } from '../components/ServiceCard'
 import WhyChooseUs from '../components/WhyChooseUs'
@@ -29,6 +30,7 @@ export default function Home() {
       <div className="home-stack">
         <ProblemAwareness />
         <BeforeAfter />
+        <WorkVideo />
         <ServicesGrid />
         <WorkGallery />
         <HowItWorks />

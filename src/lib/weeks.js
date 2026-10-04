@@ -78,6 +78,48 @@ export function workWeeksForMonths(months = 3) {
   return weeks
 }
 
+/** Two-week pay period, aligned to the Tuesday work week. */
+const FORTNIGHT_EPOCH = atMidnight(new Date(2026, 0, 6))
+
+export function startOfFortnight(from = new Date()) {
+  const weekStart = startOfWorkWeek(from)
+  const days = Math.round((weekStart.getTime() - FORTNIGHT_EPOCH.getTime()) / 86400000)
+  const offset = ((days % 14) + 14) % 14
+  return addDays(weekStart, -offset)
+}
+
+export function fortnightBounds(from = new Date()) {
+  const start = startOfFortnight(from)
+  const end = addDays(start, 13)
+  return {
+    start,
+    end,
+    value: isoDate(start),
+    label: `${formatDay(start)} – ${formatDay(end)}`,
+  }
+}
+
+export function recentFortnights(count = 6) {
+  const items = []
+  let cursor = startOfFortnight()
+  for (let i = 0; i < count; i += 1) {
+    items.push({
+      start: new Date(cursor),
+      end: addDays(cursor, 13),
+      value: isoDate(cursor),
+      label: `${formatDay(cursor)} – ${formatDay(addDays(cursor, 13))}`,
+    })
+    cursor = addDays(cursor, -14)
+  }
+  return items
+}
+
+export function dateInRange(date, start, end) {
+  if (!date || !start || !end) return false
+  const day = atMidnight(date)
+  return day >= atMidnight(start) && day <= atMidnight(end)
+}
+
 export function upcomingWorkWeeks(count = 8) {
   let tuesday = startOfWorkWeek()
   const weeks = []

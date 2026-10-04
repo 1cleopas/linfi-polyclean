@@ -74,3 +74,19 @@ export function updateAdminJob(id, payload) {
 export function deleteAdminJob(id) {
   return request(`/api/admin/jobs/${id}`, { method: 'DELETE', auth: true })
 }
+
+export function listAdminWorkers() {
+  return request('/api/admin/workers', { auth: true })
+}
+
+export function createAdminWorker(payload) {
+  return request('/api/admin/workers', { method: 'POST', auth: true, body: payload })
+}
+
+export function updateAdminWorker(id, payload) {
+  return request(`/api/admin/workers/${id}`, { method: 'PATCH', auth: true, body: payload })
+}
+
+export function deleteAdminWorker(id) {
+  return request(`/api/admin/workers/${id}`, { method: 'DELETE', auth: true })
+}

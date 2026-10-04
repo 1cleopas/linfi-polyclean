@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CalendarDays, CircleDollarSign, ClipboardList, Eye, EyeOff, LogOut, Plus, ReceiptText, Search } from 'lucide-react'
 import { services, tankSizes, tankTypes } from '../data/content'
 import { nextCleaningDate, workWeeksForMonths } from '../lib/weeks'
@@ -8,10 +8,12 @@ import {
   deleteAdminJob,
   getAdminToken,
   listAdminJobs,
+  listAdminWorkers,
   setAdminToken,
   updateAdminJob,
   wakeAdminApi,
 } from '../lib/api'
+import AdminSalaries from '../components/AdminSalaries'
 import Button from '../components/Button'
 
 const STATUSES = [
@@ -38,6 +40,7 @@ const emptyJob = {
   status: 'confirmed',
   amount: '',
   notes: '',
+  workerId: '',
 }
 
 function formatCedis(amount) {
@@ -99,6 +102,7 @@ export default function Admin() {
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [jobs, setJobs] = useState([])
+  const [workers, setWorkers] = useState([])
   const [error, setError] = useState('')
   const [loadError, setLoadError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -113,6 +117,10 @@ export default function Admin() {
   const [draft, setDraft] = useState(emptyJob)
   const weeks = useMemo(() => workWeeksForMonths(3), [])
   const requestSeq = useRef(0)
+  const handleUnauthorized = useCallback(() => {
+    setAdminToken('')
+    setTokenReady(false)
+  }, [])
 
   useEffect(() => {
     const meta = document.querySelector('meta[name="robots"]')
@@ -131,9 +139,10 @@ export default function Admin() {
   async function refresh() {
     const seq = ++requestSeq.current
     try {
-      const data = await listAdminJobs()
+      const [jobData, workerData] = await Promise.all([listAdminJobs(), listAdminWorkers()])
       if (seq !== requestSeq.current) return
-      setJobs(data.jobs || [])
+      setJobs(jobData.jobs || [])
+      setWorkers(workerData.workers || [])
       setLoadError('')
     } catch (err) {
       if (seq !== requestSeq.current) return
@@ -341,9 +350,12 @@ export default function Admin() {
         <div className="admin-head">
           <div>
             <p className="eyebrow">Manager dashboard</p>
-            <h1 className="headline">Jobs & bookings</h1>
+            <h1 className="headline">Jobs, bookings & salaries</h1>
           </div>
           <div className="admin-actions">
+            <Button variant="outline" href="#salaries">
+              Salaries
+            </Button>
             <Button onClick={() => setAdding(true)}>
               <Plus className="icon-sm" />
               Add job
@@ -395,6 +407,13 @@ export default function Admin() {
           </ul>
           <p className="field-hint" style={{ marginTop: '0.75rem' }}>Add GH₵50 for tanks above 2 storeys.</p>
         </section>
+
+        <AdminSalaries
+          jobs={jobs}
+          workers={workers}
+          onWorkersUpdated={refresh}
+          onUnauthorized={handleUnauthorized}
+        />
 
         <div className="admin-filters">
           <label className="search-wrap">
@@ -454,6 +473,7 @@ export default function Admin() {
               <tr>
                 <th>Customer</th>
                 <th>Week</th>
+                <th>Worker</th>
                 <th>Service</th>
                 <th>Status</th>
                 <th className="right">Amount</th>
@@ -481,6 +501,7 @@ export default function Admin() {
                           </span>
                         ) : null}
                       </td>
+                      <td>{workers.find((worker) => worker.id === job.workerId)?.fullName || '—'}</td>
                       <td>
                         <p style={{ margin: 0 }}>{job.service || 'Polytank cleaning'}</p>
                         <p className="field-hint">{job.tankSize || 'Size not given'}</p>
@@ -511,7 +532,7 @@ export default function Admin() {
               })()}
               {visible.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ padding: '2.5rem 1rem', textAlign: 'center', color: 'var(--color-muted)' }}>
+                  <td colSpan={7} style={{ padding: '2.5rem 1rem', textAlign: 'center', color: 'var(--color-muted)' }}>
                     No jobs match these filters yet.
                   </td>
                 </tr>
@@ -624,6 +645,22 @@ export default function Admin() {
                     </option>
                   ))}
                 </select>
+              </label>
+              <label className="field">
+                Worker
+                <select
+                  className="select"
+                  value={adding ? draft.workerId : selected.workerId || ''}
+                  onChange={(e) => (adding ? setDraft({ ...draft, workerId: e.target.value }) : setSelected({ ...selected, workerId: e.target.value }))}
+                >
+                  <option value="">Unassigned</option>
+                  {workers.map((worker) => (
+                    <option key={worker.id} value={worker.id}>
+                      {worker.fullName}
+                    </option>
+                  ))}
+                </select>
+                <span className="field-hint">Commission is counted when this job is marked done or paid.</span>
               </label>
               <Field
                 label="Amount earned (GH₵)"
