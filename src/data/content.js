@@ -68,7 +68,6 @@ export const navLinks = [
   { to: '/#home', label: 'Home' },
   { to: '/about', label: 'About Us' },
   { to: '/#services', label: 'Our Services' },
-  { to: '/#pricing', label: 'Pricing' },
   { to: '/#how-it-works', label: 'How It Works' },
   { to: '/#why-choose-us', label: 'Why Choose Us' },
   { to: '/#faqs', label: 'FAQs' },
@@ -236,15 +235,6 @@ export const testimonials = [
   },
 ]
 
-export const pricingFactors = [
-  'Tank size',
-  'Number of tanks',
-  'Tank accessibility',
-  'Location',
-  'Level of dirt/buildup',
-  'Type of service required',
-]
-
 export const accraAreas = [
   'East Legon',
   'Airport Residential',
@@ -285,10 +275,6 @@ export const faqs = [
   {
     q: 'Do you provide disinfection services?',
     a: 'Yes. Polytank cleaning includes water tank disinfection. We clean the tank, then apply professional disinfection procedures designed to improve tank hygiene. This helps maintain a cleaner storage environment; it does not, on its own, guarantee that water is safe to drink.',
-  },
-  {
-    q: 'How much does polytank cleaning cost?',
-    a: 'Pricing depends on tank size, number of tanks, accessibility, location, the level of dirt or buildup, and the type of service required. Book a cleaning or WhatsApp us with those details and we will confirm the price — we do not publish a single flat rate because jobs vary.',
   },
   {
     q: 'Which areas in Accra do you cover?',
