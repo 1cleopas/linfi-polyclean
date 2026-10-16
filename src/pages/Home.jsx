@@ -16,11 +16,8 @@ import SectionHeader from '../components/SectionHeader'
 import BookingForm from '../components/BookingForm'
 import ContactForm from '../components/ContactForm'
 import ContactDetails from '../components/ContactDetails'
-import Button from '../components/Button'
-import { useQuote } from '../context/QuoteContext'
 
 export default function Home() {
-  const { openQuote } = useQuote()
 
   return (
     <>
