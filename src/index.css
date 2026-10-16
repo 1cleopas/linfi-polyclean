@@ -227,6 +227,9 @@ h4,
 
 .site-main {
   flex: 1;
+  /* Sections that slide in from the side must not widen the page on phones. */
+  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .btn {
