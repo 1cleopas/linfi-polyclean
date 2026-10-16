@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { company } from '../data/content'
 import { nextCleaningDate } from '../lib/weeks'
-import { getAdminToken, listAdminJobs } from '../lib/api'
+import { getAdminToken, listAdminJobs, setAdminToken } from '../lib/api'
 import { buildReceiptPdf } from '../lib/receiptPdf'
 import Button from '../components/Button'
 
@@ -80,7 +80,14 @@ export default function Receipt() {
           .sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)))
         setJobs(group.length ? group : [current])
       })
-      .catch((err) => setError(err.message))
+      .catch((err) => {
+        if (err.status === 401) {
+          setAdminToken('')
+          window.location.replace('/admin')
+          return
+        }
+        setError(err.message)
+      })
     return undefined
   }, [id])
 

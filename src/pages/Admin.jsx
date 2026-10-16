@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CalendarDays, CircleDollarSign, ClipboardList, Eye, EyeOff, LogOut, Plus, ReceiptText, Search } from 'lucide-react'
 import { services, tankSizes, tankTypes } from '../data/content'
-import { nextCleaningDate, workWeeksForMonths } from '../lib/weeks'
+import { firstCleaningDate, nextCleaningDate, workWeeksForMonths } from '../lib/weeks'
+import { jobWorkDate } from '../lib/commission'
 import {
   adminLogin,
   createAdminJob,
@@ -52,8 +53,14 @@ function monthKey(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
 }
 
+// Count a job in the month it is worked, matching the payroll figures.
 function jobMonth(job) {
-  return monthKey(new Date(job.createdAt))
+  const date = jobWorkDate(job)
+  return date && !Number.isNaN(date.getTime()) ? monthKey(date) : ''
+}
+
+function weekTime(job) {
+  return firstCleaningDate(job.week)?.getTime() ?? Number.POSITIVE_INFINITY
 }
 
 function statusLabel(value) {
@@ -223,19 +230,18 @@ export default function Admin() {
     next.sort((a, b) => {
       if (sort === 'amount') return (Number(b.amount) || 0) - (Number(a.amount) || 0)
       if (sort === 'week') {
-        const order = weeks.map((week) => week.label)
-        const aIndex = order.indexOf(a.week)
-        const bIndex = order.indexOf(b.week)
-        return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex)
+        const diff = weekTime(a) - weekTime(b)
+        if (diff) return diff
+        return String(a.createdAt).localeCompare(String(b.createdAt))
       }
       if (sort === 'status') return String(a.status).localeCompare(String(b.status))
       return String(b.createdAt).localeCompare(String(a.createdAt))
     })
     return next
-  }, [jobs, month, search, sort, status, weekFilter, weeks])
+  }, [jobs, month, search, sort, status, weekFilter])
 
   const months = useMemo(() => {
-    const keys = new Set(jobs.map(jobMonth))
+    const keys = new Set(jobs.map(jobMonth).filter(Boolean))
     keys.add(monthKey(new Date()))
     return [...keys].sort().reverse()
   }, [jobs])
@@ -268,8 +274,9 @@ export default function Admin() {
       const data = await updateAdminJob(selected.id, selected)
       setJobs((prev) => prev.map((job) => (job.id === data.job.id ? data.job : job)))
       setSelected(null)
-      await refresh()
+      refresh().catch(() => {})
     } catch (err) {
+      if (err.status === 401) handleUnauthorized()
       setError(err.message)
     }
   }
@@ -282,7 +289,7 @@ export default function Admin() {
       setJobs((prev) => [data.job, ...prev])
       setDraft(emptyJob)
       setAdding(false)
-      await refresh()
+      refresh().catch(() => {})
     } catch (err) {
       setError(err.message)
     }
@@ -290,11 +297,12 @@ export default function Admin() {
 
   async function removeJob(id) {
     if (!window.confirm('Delete this job record?')) return
+    setError('')
     try {
       await deleteAdminJob(id)
       setJobs((prev) => prev.filter((job) => job.id !== id))
       if (selected?.id === id) setSelected(null)
-      await refresh()
+      refresh().catch(() => {})
     } catch (err) {
       setError(err.message)
     }
@@ -356,7 +364,7 @@ export default function Admin() {
             <Button variant="outline" href="#salaries">
               Salaries
             </Button>
-            <Button onClick={() => setAdding(true)}>
+            <Button onClick={() => { setError(''); setDraft(emptyJob); setAdding(true) }}>
               <Plus className="icon-sm" />
               Add job
             </Button>
@@ -488,7 +496,7 @@ export default function Admin() {
                   const showReceipt = !shown.has(receiptId)
                   if (showReceipt) shown.add(receiptId)
                   return (
-                    <tr key={job.id} className="is-clickable" onClick={() => setSelected(job)}>
+                    <tr key={job.id} className="is-clickable" onClick={() => { setError(''); setSelected(job) }}>
                       <td>
                         <p style={{ margin: 0, fontWeight: 600, color: 'var(--color-primary)' }}>{job.fullName}</p>
                         <p className="field-hint">{job.location} · {job.phone}</p>
@@ -674,6 +682,7 @@ export default function Admin() {
                 onChange={(value) => (adding ? setDraft({ ...draft, notes: value }) : setSelected({ ...selected, notes: value }))}
               />
             </div>
+            {error && <p className="field-error" style={{ marginTop: '1rem' }}>{error}</p>}
             <div className="admin-actions" style={{ marginTop: '1.5rem', flexWrap: 'wrap' }}>
               <Button type="submit">{adding ? 'Save job' : 'Save changes'}</Button>
               <Button
@@ -682,6 +691,7 @@ export default function Admin() {
                 onClick={() => {
                   setSelected(null)
                   setAdding(false)
+                  setError('')
                 }}
               >
                 Close
