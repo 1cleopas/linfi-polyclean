@@ -155,6 +155,72 @@ app.post('/api/bookings', async (req, res) => {
   }
 })
 
+const formSecret = String(process.env.FORM_WEBHOOK_SECRET || '').trim()
+
+// Bookings sent by the Google Form's script. Protected by a shared secret, and safe to retry:
+// a response that was already saved is recognised by its id and not saved again.
+app.post('/api/integrations/google-form', async (req, res) => {
+  if (!formSecret) {
+    res.status(503).json({ error: 'Google Form bookings are not set up on the server.' })
+    return
+  }
+  if (!passwordMatches(String(req.headers['x-form-secret'] || ''), formSecret)) {
+    res.status(401).json({ error: 'Not allowed.' })
+    return
+  }
+  const raw = req.body && typeof req.body === 'object' ? req.body : {}
+  const responseId = text(raw.responseId, 200)
+  const fullName = text(raw.fullName, 200)
+  const phone = text(raw.phone, 50)
+  if (!responseId || !fullName || !phone) {
+    res.status(400).json({ error: 'Response id, name and phone are required.' })
+    return
+  }
+
+  const existing = listJobs().filter((job) => job.formResponseId === responseId)
+  if (existing.length) {
+    res.json({ duplicate: true, jobs: existing })
+    return
+  }
+
+  const requested = Number.parseInt(text(raw.tanks), 10)
+  const tankCount = Math.min(Number.isFinite(requested) && requested > 1 ? requested : 1, 100)
+  const location = [text(raw.location, 200), text(raw.digitalAddress, 100)].filter(Boolean).join(' — ')
+  const notes = [
+    raw.lastCleaned ? `Last cleaned: ${text(raw.lastCleaned, 100)}.` : '',
+    text(raw.extra, 2000),
+  ].filter(Boolean).join(' ')
+
+  try {
+    const jobs = await createJobs(
+      Array.from({ length: tankCount }, (_, index) => ({
+        fullName,
+        phone,
+        whatsapp: text(raw.whatsapp, 50),
+        location,
+        service: text(raw.service, 200),
+        tankType: text(raw.tankType, 100),
+        tankSize: text(raw.tankSize, 100),
+        tanks: '1',
+        week: text(raw.week, 100),
+        time: text(raw.time, 100),
+        extra: [tankCount > 1 ? `Tank ${index + 1} of ${tankCount}.` : '', notes].filter(Boolean).join(' '),
+        status: 'new',
+        source: 'google-form',
+        formResponseId: responseId,
+      })),
+    )
+    console.log(`Google Form booking saved: ${fullName} (${jobs.length} tank${jobs.length === 1 ? '' : 's'}, ${jobs[0].week})`)
+    res.status(201).json({ jobs })
+  } catch (error) {
+    if (error.code === 'INVALID') {
+      res.status(400).json({ error: error.message })
+      return
+    }
+    throw error
+  }
+})
+
 app.post('/api/admin/login', (req, res) => {
   const ip = clientIp(req)
   if (!adminPassword) {
