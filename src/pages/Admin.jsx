@@ -499,7 +499,7 @@ export default function Admin() {
                     <tr key={job.id} className="is-clickable" onClick={() => { setError(''); setSelected(job) }}>
                       <td>
                         <p style={{ margin: 0, fontWeight: 600, color: 'var(--color-primary)' }}>{job.fullName}</p>
-                        <p className="field-hint">{job.location} · {job.phone}</p>
+                        <p className="field-hint">{job.location} · {job.phone}{job.source === 'google-form' ? ' · via Google Form' : ''}</p>
                       </td>
                       <td>
                         {job.week || '—'}
