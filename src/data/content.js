@@ -18,7 +18,7 @@ export const company = {
   whatsapp: '059 984 2689',
   whatsappDigits: '233599842689',
   email: 'linfipolyclean@gmail.com',
-  hours: '[ADD HOURS]',
+  hours: 'Tuesday – Sunday, 8:00am – 6:00pm (Monday closed)',
   serviceArea: 'Accra, Ghana',
   location: 'Accra, Ghana',
 }
