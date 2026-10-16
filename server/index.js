@@ -4,10 +4,21 @@ import { existsSync } from 'node:fs'
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import { join } from 'node:path'
 import { countWeekBookings, createJob, createJobs, deleteJob, jobsFilePath, listJobs, replaceAllJobs, updateJob } from './store.js'
+import { initStorage } from './db.js'
 import { createWorker, deleteWorker, listWorkers, updateWorker, workersFilePath } from './workers.js'
 
 const app = express()
-const adminPassword = process.env.ADMIN_PASSWORD || 'linfi-admin'
+const configuredPassword = String(process.env.ADMIN_PASSWORD || '').trim()
+const onHost = Boolean(process.env.RENDER || process.env.NODE_ENV === 'production')
+// The old fallback password is in the public repo, so it is only allowed for local development.
+const adminPassword = configuredPassword || (onHost ? '' : 'linfi-admin')
+if (!configuredPassword) {
+  console.warn(
+    onHost
+      ? 'ADMIN_PASSWORD is not set. Manager sign-in is disabled until it is added in the hosting settings.'
+      : 'ADMIN_PASSWORD is not set. Using the local development password.',
+  )
+}
 const SESSION_MS = 1000 * 60 * 60 * 24 * 14
 const buckets = new Map()
 
@@ -16,8 +27,20 @@ function clientIp(req) {
   return forwarded || req.socket?.remoteAddress || 'unknown'
 }
 
+const PUBLIC_BOOKING_FIELDS = ['fullName', 'phone', 'whatsapp', 'location', 'service', 'tankType', 'tankSize', 'week', 'time', 'extra']
+
+function text(value, max = 500) {
+  if (typeof value !== 'string' && typeof value !== 'number') return ''
+  return String(value).trim().slice(0, max)
+}
+
 function tooMany(key, { max, windowMs }) {
   const now = Date.now()
+  if (buckets.size > 5000) {
+    for (const [bucketKey, bucket] of buckets) {
+      if (now - bucket.start > windowMs) buckets.delete(bucketKey)
+    }
+  }
   const item = buckets.get(key)
   if (!item || now - item.start > windowMs) {
     buckets.set(key, { start: now, count: 1 })
@@ -34,12 +57,14 @@ function passwordMatches(given, expected) {
 }
 
 function signSession() {
+  if (!adminPassword) throw new Error('Manager sign-in is not configured.')
   const payload = Buffer.from(JSON.stringify({ exp: Date.now() + SESSION_MS, v: 4 })).toString('base64url')
   const sig = createHmac('sha256', adminPassword).update(payload).digest('base64url')
   return `${payload}.${sig}`
 }
 
 function hasValidSession(token) {
+  if (!adminPassword) return false
   const parts = String(token || '').split('.')
   if (parts.length !== 2) return false
   const [payload, sig] = parts
@@ -82,33 +107,35 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true })
 })
 
-app.post('/api/bookings', (req, res) => {
+app.post('/api/bookings', async (req, res) => {
   if (tooMany(`book:${clientIp(req)}`, { max: 24, windowMs: 15 * 60 * 1000 })) {
     res.status(429).json({ error: 'Too many booking attempts. Please wait a few minutes.' })
     return
   }
-  const body = req.body || {}
-  if (!String(body.fullName || '').trim() || !String(body.phone || '').trim() || !String(body.location || '').trim() || !String(body.week || '').trim()) {
+  const raw = req.body && typeof req.body === 'object' ? req.body : {}
+  // Only accept fields a customer is allowed to set. Price, notes, status and worker stay manager-only.
+  const body = Object.fromEntries(PUBLIC_BOOKING_FIELDS.map((key) => [key, text(raw[key], key === 'extra' ? 2000 : 200)]))
+  if (!body.fullName || !body.phone || !body.location || !body.week) {
     res.status(400).json({ error: 'Name, phone, location and preferred week are required.' })
     return
   }
 
   try {
-    const requested = Number.parseInt(String(body.tanks || '').trim(), 10)
+    const requested = Number.parseInt(text(raw.tanks), 10)
     const tankCount = Number.isFinite(requested) && requested > 1 ? requested : 1
     if (tankCount > 100) {
       res.status(400).json({ error: 'One booking can include up to 100 tanks.' })
       return
     }
 
-    const sizes = Array.isArray(body.tankSizes) ? body.tankSizes : []
-    const jobs = createJobs(
+    const sizes = Array.isArray(raw.tankSizes) ? raw.tankSizes.map((size) => text(size, 100)) : []
+    const jobs = await createJobs(
       Array.from({ length: tankCount }, (_, index) => ({
         ...body,
         source: 'website',
         status: 'new',
         tanks: '1',
-        tankSize: String(sizes[index] || (tankCount === 1 ? body.tankSize : '') || '').trim(),
+        tankSize: sizes[index] || (tankCount === 1 ? body.tankSize : ''),
         extra: [tankCount > 1 ? `Tank ${index + 1} of ${tankCount}.` : '', body.extra].filter(Boolean).join(' '),
       })),
     )
@@ -123,12 +150,17 @@ app.post('/api/bookings', (req, res) => {
       res.status(400).json({ error: error.message })
       return
     }
+    console.error(error)
     res.status(500).json({ error: 'Could not save this booking.' })
   }
 })
 
 app.post('/api/admin/login', (req, res) => {
   const ip = clientIp(req)
+  if (!adminPassword) {
+    res.status(503).json({ error: 'Manager sign-in is not set up yet. Add ADMIN_PASSWORD in the hosting settings.' })
+    return
+  }
   if (!passwordMatches(String(req.body?.password || '').trim(), adminPassword)) {
     if (tooMany(`login:${ip}`, { max: 8, windowMs: 15 * 60 * 1000 })) {
       res.status(429).json({ error: 'Too many sign-in attempts. Wait a few minutes and try again.' })
@@ -144,10 +176,11 @@ app.get('/api/admin/jobs', requireAdmin, (_req, res) => {
   res.json({ jobs: listJobs() })
 })
 
-app.put('/api/admin/jobs', requireAdmin, (req, res) => {
+app.put('/api/admin/jobs', requireAdmin, async (req, res) => {
   try {
-    res.json({ jobs: replaceAllJobs(req.body?.jobs) })
+    res.json({ jobs: await replaceAllJobs(req.body?.jobs) })
   } catch (error) {
+    if (error.code !== 'INVALID') throw error
     res.status(400).json({ error: error.message })
   }
 })
@@ -161,30 +194,32 @@ app.get('/api/admin/jobs/:id', requireAdmin, (req, res) => {
   res.json({ job })
 })
 
-app.post('/api/admin/jobs', requireAdmin, (req, res) => {
+app.post('/api/admin/jobs', requireAdmin, async (req, res) => {
   try {
-    const job = createJob({ ...(req.body || {}), source: req.body?.source || 'manual' })
+    const job = await createJob({ ...(req.body || {}), source: req.body?.source || 'manual' })
     res.status(201).json({ job })
   } catch (error) {
+    if (error.code !== 'INVALID') throw error
     res.status(400).json({ error: error.message })
   }
 })
 
-app.patch('/api/admin/jobs/:id', requireAdmin, (req, res) => {
+app.patch('/api/admin/jobs/:id', requireAdmin, async (req, res) => {
   try {
-    const job = updateJob(req.params.id, req.body || {})
+    const job = await updateJob(req.params.id, req.body || {})
     if (!job) {
       res.status(404).json({ error: 'Job not found.' })
       return
     }
     res.json({ job })
   } catch (error) {
+    if (error.code !== 'INVALID') throw error
     res.status(400).json({ error: error.message })
   }
 })
 
-app.delete('/api/admin/jobs/:id', requireAdmin, (req, res) => {
-  if (!deleteJob(req.params.id)) {
+app.delete('/api/admin/jobs/:id', requireAdmin, async (req, res) => {
+  if (!(await deleteJob(req.params.id))) {
     res.status(404).json({ error: 'Job not found.' })
     return
   }
@@ -195,34 +230,40 @@ app.get('/api/admin/workers', requireAdmin, (_req, res) => {
   res.json({ workers: listWorkers() })
 })
 
-app.post('/api/admin/workers', requireAdmin, (req, res) => {
+app.post('/api/admin/workers', requireAdmin, async (req, res) => {
   try {
-    const worker = createWorker(req.body || {})
+    const worker = await createWorker(req.body || {})
     res.status(201).json({ worker })
   } catch (error) {
+    if (error.code !== 'INVALID') throw error
     res.status(400).json({ error: error.message })
   }
 })
 
-app.patch('/api/admin/workers/:id', requireAdmin, (req, res) => {
+app.patch('/api/admin/workers/:id', requireAdmin, async (req, res) => {
   try {
-    const worker = updateWorker(req.params.id, req.body || {})
+    const worker = await updateWorker(req.params.id, req.body || {})
     if (!worker) {
       res.status(404).json({ error: 'Worker not found.' })
       return
     }
     res.json({ worker })
   } catch (error) {
+    if (error.code !== 'INVALID') throw error
     res.status(400).json({ error: error.message })
   }
 })
 
-app.delete('/api/admin/workers/:id', requireAdmin, (req, res) => {
-  if (!deleteWorker(req.params.id)) {
+app.delete('/api/admin/workers/:id', requireAdmin, async (req, res) => {
+  if (!(await deleteWorker(req.params.id))) {
     res.status(404).json({ error: 'Worker not found.' })
     return
   }
   res.status(204).end()
+})
+
+app.use('/api', (_req, res) => {
+  res.status(404).json({ error: 'Not found.' })
 })
 
 const dist = join(rootDir, 'dist')
@@ -233,6 +274,14 @@ if (existsSync(indexFile)) {
     res.sendFile(indexFile)
   })
 }
+
+app.use((error, _req, res, _next) => {
+  console.error(error)
+  if (res.headersSent) return
+  res.status(500).json({ error: 'Something went wrong on the server. Please try again.' })
+})
+
+await initStorage()
 
 app.listen(port, '0.0.0.0', () => {
   console.log(`LINFI POLYCLEAN server listening on 0.0.0.0:${port}`)

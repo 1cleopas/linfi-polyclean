@@ -1,44 +1,13 @@
-import './loadEnv.js'
-import { mkdirSync, readFileSync, writeFileSync, existsSync, renameSync, unlinkSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const rootDir = fileURLToPath(new URL('..', import.meta.url))
-const dataDir = process.env.DATA_DIR || join(rootDir, 'data')
-const filePath = join(dataDir, 'workers.json')
-
-function ensureFile() {
-  mkdirSync(dirname(filePath), { recursive: true })
-  if (!existsSync(filePath)) {
-    writeFileSync(filePath, '[]', 'utf8')
-  }
-}
+import { readList, storageLabel, writeList } from './db.js'
 
 function readWorkers() {
-  ensureFile()
-  try {
-    const parsed = JSON.parse(readFileSync(filePath, 'utf8'))
-    return Array.isArray(parsed) ? parsed.map(normalizeWorker) : []
-  } catch {
-    return []
-  }
+  return readList('workers')
+    .filter((worker) => worker && typeof worker === 'object' && worker.id)
+    .map((worker) => normalizeWorker(worker, { strict: false }))
 }
 
 function writeWorkers(workers) {
-  mkdirSync(dirname(filePath), { recursive: true })
-  const payload = JSON.stringify(workers, null, 2)
-  const tmp = `${filePath}.${process.pid}.tmp`
-  writeFileSync(tmp, payload, 'utf8')
-  try {
-    renameSync(tmp, filePath)
-  } catch {
-    writeFileSync(filePath, payload, 'utf8')
-    try {
-      unlinkSync(tmp)
-    } catch {
-      // The temp file can remain if Windows still has it open.
-    }
-  }
+  return writeList('workers', workers)
 }
 
 function invalidError(message) {
@@ -47,15 +16,22 @@ function invalidError(message) {
   return error
 }
 
-function parseCommissionPercent(value) {
+function parseCommissionPercent(value, strict = true) {
   if (value === '' || value == null) return null
   const rate = Number(value)
-  if (Number.isNaN(rate)) return null
-  if (rate < 0 || rate > 100) throw invalidError('Commission must be between 0 and 100 percent.')
+  if (Number.isNaN(rate)) {
+    if (strict) throw invalidError('Commission must be a number between 0 and 100.')
+    return null
+  }
+  if (rate < 0 || rate > 100) {
+    // A bad saved value must not hide every worker, so reads clear it instead of failing.
+    if (strict) throw invalidError('Commission must be between 0 and 100 percent.')
+    return null
+  }
   return rate
 }
 
-function normalizeWorker(worker) {
+function normalizeWorker(worker, { strict = true } = {}) {
   return {
     id: worker.id,
     createdAt: worker.createdAt,
@@ -63,7 +39,7 @@ function normalizeWorker(worker) {
     fullName: String(worker.fullName || '').trim(),
     role: String(worker.role || '').trim(),
     phone: String(worker.phone || '').trim(),
-    commissionPercent: parseCommissionPercent(worker.commissionPercent),
+    commissionPercent: parseCommissionPercent(worker.commissionPercent, strict),
     notes: String(worker.notes || '').trim(),
   }
 }
@@ -85,21 +61,21 @@ function buildWorker(input, now) {
 }
 
 export function workersFilePath() {
-  return filePath
+  return storageLabel('workers')
 }
 
 export function listWorkers() {
   return readWorkers().sort((a, b) => String(a.fullName).localeCompare(String(b.fullName)))
 }
 
-export function createWorker(input) {
+export async function createWorker(input) {
   const existing = readWorkers()
   const worker = buildWorker(input, new Date().toISOString())
-  writeWorkers([...existing, worker])
+  await writeWorkers([...existing, worker])
   return worker
 }
 
-export function updateWorker(id, patch) {
+export async function updateWorker(id, patch) {
   const workers = readWorkers()
   const index = workers.findIndex((worker) => worker.id === id)
   if (index === -1) return null
@@ -123,14 +99,14 @@ export function updateWorker(id, patch) {
   })
 
   workers[index] = next
-  writeWorkers(workers)
+  await writeWorkers(workers)
   return next
 }
 
-export function deleteWorker(id) {
+export async function deleteWorker(id) {
   const workers = readWorkers()
   const next = workers.filter((worker) => worker.id !== id)
   if (next.length === workers.length) return false
-  writeWorkers(next)
+  await writeWorkers(next)
   return true
 }

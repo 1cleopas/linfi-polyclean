@@ -1,54 +1,26 @@
-import './loadEnv.js'
-import { mkdirSync, readFileSync, writeFileSync, existsSync, renameSync, unlinkSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const rootDir = fileURLToPath(new URL('..', import.meta.url))
-const dataDir = process.env.DATA_DIR || join(rootDir, 'data')
-const filePath = join(dataDir, 'jobs.json')
-
-function ensureFile() {
-  mkdirSync(dirname(filePath), { recursive: true })
-  if (!existsSync(filePath)) {
-    writeFileSync(filePath, '[]', 'utf8')
-  }
-}
+import { readList, storageLabel, writeList } from './db.js'
 
 function readJobs() {
-  ensureFile()
-  try {
-    const parsed = JSON.parse(readFileSync(filePath, 'utf8'))
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
+  return readList('jobs').filter(isJobRecord)
 }
 
 function writeJobs(jobs) {
-  mkdirSync(dirname(filePath), { recursive: true })
-  const payload = JSON.stringify(jobs, null, 2)
-  const tmp = `${filePath}.${process.pid}.tmp`
-  writeFileSync(tmp, payload, 'utf8')
-  try {
-    renameSync(tmp, filePath)
-  } catch {
-    writeFileSync(filePath, payload, 'utf8')
-    try {
-      unlinkSync(tmp)
-    } catch {
-      // The temp file can remain if Windows still has it open.
-    }
-  }
+  return writeList('jobs', jobs)
 }
 
-export function replaceAllJobs(jobs) {
+function isJobRecord(job) {
+  return Boolean(job) && typeof job === 'object' && !Array.isArray(job) && typeof job.id === 'string' && job.id.length > 0
+}
+
+export async function replaceAllJobs(jobs) {
   if (!Array.isArray(jobs)) throw invalidError('A jobs list is required.')
-  writeJobs(jobs)
+  if (!jobs.every(isJobRecord)) throw invalidError('Every job must be a record with an id.')
+  await writeJobs(jobs)
   return listJobs()
 }
 
 export function jobsFilePath() {
-  return filePath
+  return storageLabel('jobs')
 }
 
 export function listJobs() {
@@ -62,6 +34,29 @@ export function countWeekBookings(week, exceptId) {
 }
 
 
+const STATUSES = new Set(['new', 'confirmed', 'scheduled', 'done', 'paid', 'cancelled'])
+const EDITABLE_FIELDS = ['fullName', 'phone', 'whatsapp', 'location', 'service', 'tankType', 'tankSize', 'tanks', 'week', 'time', 'extra', 'status', 'amount', 'notes', 'workerId']
+
+function text(value, max = 2000) {
+  if (typeof value !== 'string' && typeof value !== 'number') return ''
+  return String(value).trim().slice(0, max)
+}
+
+function parseStatus(value, fallback) {
+  const status = text(value)
+  if (!status) return fallback
+  if (!STATUSES.has(status)) throw invalidError('Unknown job status.')
+  return status
+}
+
+function parseAmount(value) {
+  if (value === '' || value == null) return null
+  const amount = Number(value)
+  if (Number.isNaN(amount) || !Number.isFinite(amount)) return null
+  if (amount < 0) throw invalidError('Amount cannot be negative.')
+  return amount
+}
+
 function invalidError(message) {
   const error = new Error(message)
   error.code = 'INVALID'
@@ -69,96 +64,75 @@ function invalidError(message) {
 }
 
 function buildJob(input, now) {
-  const week = String(input.week || '').trim()
-  const status = input.status || 'new'
-  if (!String(input.fullName || '').trim()) throw invalidError('Name is required.')
-  if (!String(input.phone || '').trim()) throw invalidError('Phone is required.')
+  const fullName = text(input.fullName, 200)
+  const phone = text(input.phone, 50)
+  if (!fullName) throw invalidError('Name is required.')
+  if (!phone) throw invalidError('Phone is required.')
 
-  const job = {
+  return {
     id: crypto.randomUUID(),
     createdAt: now,
     updatedAt: now,
-    fullName: String(input.fullName || '').trim(),
-    phone: String(input.phone || '').trim(),
-    whatsapp: String(input.whatsapp || '').trim(),
-    location: String(input.location || '').trim(),
-    service: String(input.service || '').trim(),
-    tankType: String(input.tankType || '').trim(),
-    tankSize: String(input.tankSize || '').trim(),
-    tanks: String(input.tanks || '').trim(),
-    week,
-    time: String(input.time || '').trim(),
-    extra: String(input.extra || '').trim(),
-    status,
-    amount: input.amount === '' || input.amount == null ? null : Number(input.amount),
-    notes: String(input.notes || '').trim(),
-    source: input.source || 'website',
-    workerId: String(input.workerId || '').trim(),
+    fullName,
+    phone,
+    whatsapp: text(input.whatsapp, 50),
+    location: text(input.location, 200),
+    service: text(input.service, 200),
+    tankType: text(input.tankType, 100),
+    tankSize: text(input.tankSize, 100),
+    tanks: text(input.tanks, 10),
+    week: text(input.week, 100),
+    time: text(input.time, 100),
+    extra: text(input.extra),
+    status: parseStatus(input.status, 'new'),
+    amount: parseAmount(input.amount),
+    notes: text(input.notes),
+    source: text(input.source, 20) || 'website',
+    workerId: text(input.workerId, 100),
   }
-
-  if (Number.isNaN(job.amount)) job.amount = null
-  return job
 }
 
-export function createJobs(inputs) {
+export async function createJobs(inputs) {
   const existing = readJobs()
   const started = Date.now()
   const created = inputs.map((input, index) => buildJob(input, new Date(started + index).toISOString()))
-  writeJobs([...existing, ...created])
+  await writeJobs([...existing, ...created])
   return created
 }
 
-export function createJob(input) {
-  return createJobs([input])[0]
+export async function createJob(input) {
+  return (await createJobs([input]))[0]
 }
 
-export function updateJob(id, patch) {
+export async function updateJob(id, patch) {
   const jobs = readJobs()
   const index = jobs.findIndex((job) => job.id === id)
   if (index === -1) return null
 
   const current = jobs[index]
-  const nextWeek = patch.week != null ? String(patch.week).trim() : current.week
-  const nextStatus = patch.status != null ? patch.status : current.status
-  if (patch.fullName != null && !String(patch.fullName).trim()) {
-    const error = new Error('Name is required.')
-    error.code = 'INVALID'
-    throw error
-  }
-  if (patch.phone != null && !String(patch.phone).trim()) {
-    const error = new Error('Phone is required.')
-    error.code = 'INVALID'
-    throw error
+  const changes = {}
+  for (const key of EDITABLE_FIELDS) {
+    if (patch[key] !== undefined) changes[key] = patch[key]
   }
 
-  const next = {
-    ...current,
-    ...patch,
-    id: current.id,
-    createdAt: current.createdAt,
-    updatedAt: new Date().toISOString(),
+  const next = { ...current, updatedAt: new Date().toISOString() }
+  for (const [key, value] of Object.entries(changes)) {
+    if (key === 'amount') next.amount = parseAmount(value)
+    else if (key === 'status') next.status = parseStatus(value, current.status)
+    else next[key] = text(value)
   }
-
-  next.week = nextWeek
-  next.status = nextStatus
-  if (patch.fullName != null) next.fullName = String(patch.fullName).trim()
-  if (patch.phone != null) next.phone = String(patch.phone).trim()
-
-  if (patch.amount !== undefined) {
-    next.amount = patch.amount === '' || patch.amount == null ? null : Number(patch.amount)
-    if (Number.isNaN(next.amount)) next.amount = null
-  }
-  if (patch.workerId !== undefined) next.workerId = String(patch.workerId || '').trim()
+  if (!next.fullName) throw invalidError('Name is required.')
+  if (!next.phone) throw invalidError('Phone is required.')
 
   jobs[index] = next
-  writeJobs(jobs)
+  await writeJobs(jobs)
   return next
 }
 
-export function deleteJob(id) {
+export async function deleteJob(id) {
   const jobs = readJobs()
   const next = jobs.filter((job) => job.id !== id)
   if (next.length === jobs.length) return false
-  writeJobs(next)
+  await writeJobs(next)
   return true
 }
