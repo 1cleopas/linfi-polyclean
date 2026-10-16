@@ -23,8 +23,8 @@ const SESSION_MS = 1000 * 60 * 60 * 24 * 14
 const buckets = new Map()
 
 function clientIp(req) {
-  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim()
-  return forwarded || req.socket?.remoteAddress || 'unknown'
+  // With 'trust proxy' set to 1, req.ip is the address Render's proxy saw, which a visitor cannot fake.
+  return req.ip || req.socket?.remoteAddress || 'unknown'
 }
 
 const PUBLIC_BOOKING_FIELDS = ['fullName', 'phone', 'whatsapp', 'location', 'service', 'tankType', 'tankSize', 'week', 'time', 'extra']
