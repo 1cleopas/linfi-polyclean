@@ -67,9 +67,11 @@ function bookingMessage(values) {
     `Location: ${values.location}`,
     values.service ? `Service: ${values.service}` : '',
     values.tankType ? `Tank type: ${values.tankType}` : '',
-    tankSizeList(values)
-      .map((size, index) => `Tank ${index + 1}${size ? `: ${size}` : ''}`)
-      .join('\n'),
+    tankSizeList(values).some(Boolean)
+      ? tankSizeList(values)
+          .map((size, index) => `Tank ${index + 1}: ${size || 'size not given'}`)
+          .join('\n')
+      : '',
     values.tanks ? `Number of tanks: ${values.tanks}` : '',
     values.week ? `Preferred week: ${values.week} (working days ${WORK_DAYS})` : '',
     values.time ? `Preferred time: ${values.time}` : '',
@@ -299,7 +301,7 @@ export default function BookingForm() {
           ))}
         </select>
         {errors.week && <span className="field-error">{errors.week}</span>}
-        <span className="field-hint">Working days are {WORK_DAYS} (Monday off). Each tank is saved as its own booking.</span>
+        <span className="field-hint">Working days are {WORK_DAYS} (Monday off).</span>
       </label>
       <label className="field">
         Preferred Time
