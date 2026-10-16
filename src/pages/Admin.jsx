@@ -86,17 +86,25 @@ function leadReceiptId(job, allJobs) {
   return lead?.id || job.id
 }
 
+// Base price per tank size. Sizes must match tankSizes in content.js.
 const PRICE_LIST = [
-  { size: '500L – 1,500L', amount: 300 },
-  { size: '1,501L – 2,500L', amount: 400 },
-  { size: '2,501L – 3,500L', amount: 450 },
-  { size: '3,501L – 4,500L', amount: 550 },
-  { size: '4,501L – 5,500L', amount: 600 },
-  { size: '5,501L – 6,500L', amount: 650 },
-  { size: '6,501L – 7,500L', amount: 700 },
-  { size: '7,501L – 8,500L', amount: 750 },
-  { size: '8,501L – 9,500L', amount: 800 },
-  { size: '10,000L and above', amount: 900 },
+  { size: 'Up to 2,000L', amount: 500 },
+  { size: '2,500L', amount: 550 },
+  { size: '3,000L', amount: 600 },
+  { size: '3,500L', amount: 650 },
+  { size: '4,000L', amount: 700 },
+  { size: '4,500L', amount: 750 },
+  { size: '5,000L', amount: 800 },
+  { size: '5,500L', amount: 850 },
+  { size: '6,000L', amount: 900 },
+  { size: '6,500L', amount: 950 },
+  { size: '7,000L', amount: 1000 },
+  { size: '7,500L', amount: 1100 },
+  { size: '8,000L', amount: 1200 },
+  { size: '8,500L', amount: 1250 },
+  { size: '9,000L', amount: 1300 },
+  { size: '9,500L', amount: 1350 },
+  { size: '10,000L', amount: 1400 },
 ]
 
 function priceForSize(size) {
@@ -413,7 +421,6 @@ export default function Admin() {
               </li>
             ))}
           </ul>
-          <p className="field-hint" style={{ marginTop: '0.75rem' }}>Add GH₵50 for tanks above 2 storeys.</p>
         </section>
 
         <AdminSalaries
@@ -621,7 +628,7 @@ export default function Admin() {
                 </select>
                 {priceForSize(adding ? draft.tankSize : selected.tankSize) != null && (
                   <span className="field-hint">
-                    Base price: {formatCedis(priceForSize(adding ? draft.tankSize : selected.tankSize))}. Add GH₵50 above 2 storeys.
+                    Base price: {formatCedis(priceForSize(adding ? draft.tankSize : selected.tankSize))}.
                   </span>
                 )}
               </label>
