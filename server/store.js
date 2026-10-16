@@ -89,6 +89,7 @@ function buildJob(input, now) {
     notes: text(input.notes),
     source: text(input.source, 20) || 'website',
     workerId: text(input.workerId, 100),
+    formResponseId: text(input.formResponseId, 200),
   }
 }
 
