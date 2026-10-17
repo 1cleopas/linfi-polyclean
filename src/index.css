@@ -2195,11 +2195,6 @@ h4,
   color: var(--color-muted);
 }
 
-.status-pill.is-overdue {
-  background: rgb(186 26 26 / 0.12);
-  color: #ba1a1a;
-}
-
 .invoice-modal {
   max-width: 48rem;
 }

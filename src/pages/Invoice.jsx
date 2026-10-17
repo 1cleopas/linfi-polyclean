@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { company } from '../data/content'
 import { getAdminToken, listAdminInvoices } from '../lib/api'
-import { invoiceStatusLabel, invoiceSubtotal, invoiceTotal, isOverdue, lineTotal } from '../lib/invoices'
+import { invoiceStatusLabel, invoiceSubtotal, invoiceTotal, lineTotal } from '../lib/invoices'
 import Button from '../components/Button'
 
 function formatCedis(amount) {
@@ -62,7 +62,6 @@ export default function Invoice() {
     return <main className="receipt-page" style={{ textAlign: 'center' }}>Loading invoice…</main>
   }
 
-  const overdue = isOverdue(invoice)
   const discount = Number(invoice.discount) || 0
 
   return (
@@ -97,9 +96,8 @@ export default function Invoice() {
                 <p className="eyebrow">Invoice</p>
                 <p className="headline" style={{ fontSize: '1.125rem' }}>{invoice.number}</p>
                 <p className="field-hint">Issued {formatDate(invoice.issueDate)}</p>
-                {invoice.dueDate && <p className="field-hint">Due {formatDate(invoice.dueDate)}</p>}
                 <p className={`paid-pill ${invoice.status === 'paid' ? 'is-paid' : ''}`}>
-                  {overdue ? 'Overdue' : invoiceStatusLabel(invoice.status)}
+                  {invoiceStatusLabel(invoice.status)}
                 </p>
               </div>
             </div>

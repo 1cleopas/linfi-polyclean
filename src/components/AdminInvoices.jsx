@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { CircleDollarSign, FileText, Plus, ReceiptText, Trash2 } from 'lucide-react'
 import { createAdminInvoice, deleteAdminInvoice, updateAdminInvoice } from '../lib/api'
-import { INVOICE_STATUSES, invoiceStatusLabel, invoiceSubtotal, invoiceTotal, isOverdue, lineTotal } from '../lib/invoices'
+import { INVOICE_STATUSES, invoiceStatusLabel, invoiceSubtotal, invoiceTotal, lineTotal } from '../lib/invoices'
 import Button from './Button'
 
 const emptyItem = { description: '', quantity: 1, unitPrice: '' }
@@ -19,7 +19,6 @@ function emptyInvoice() {
     phone: '',
     location: '',
     issueDate: today(),
-    dueDate: today(7),
     status: 'draft',
     items: [{ ...emptyItem }],
     discount: '',
@@ -71,13 +70,11 @@ export default function AdminInvoices({ invoices = [], jobs = [], priceForSize, 
   const paidThisMonth = invoices
     .filter((invoice) => invoice.status === 'paid' && String(invoice.updatedAt || '').slice(0, 7) === thisMonth)
     .reduce((sum, invoice) => sum + invoiceTotal(invoice), 0)
-  const overdueCount = invoices.filter((invoice) => isOverdue(invoice)).length
+  const draftCount = invoices.filter((invoice) => invoice.status === 'draft').length
 
   const visible = statusFilter === 'all'
     ? invoices
-    : statusFilter === 'overdue'
-      ? invoices.filter((invoice) => isOverdue(invoice))
-      : invoices.filter((invoice) => invoice.status === statusFilter)
+    : invoices.filter((invoice) => invoice.status === statusFilter)
 
   function closeForm() {
     setForm(null)
@@ -158,7 +155,7 @@ export default function AdminInvoices({ invoices = [], jobs = [], priceForSize, 
           <FileText className="icon" />
           <p className="eyebrow" style={{ marginTop: '0.75rem' }}>Invoices</p>
           <p className="headline">{invoices.length}</p>
-          <p className="field-hint">{overdueCount ? `${overdueCount} overdue` : 'None overdue'}</p>
+          <p className="field-hint">{draftCount} draft{draftCount === 1 ? '' : 's'}</p>
         </div>
         <div className="stat-card">
           <CircleDollarSign className="icon" />
@@ -178,7 +175,6 @@ export default function AdminInvoices({ invoices = [], jobs = [], priceForSize, 
         Show
         <select className="select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
           <option value="all">All invoices</option>
-          <option value="overdue">Overdue</option>
           {INVOICE_STATUSES.map((item) => (
             <option key={item.value} value={item.value}>
               {item.label}
@@ -196,7 +192,6 @@ export default function AdminInvoices({ invoices = [], jobs = [], priceForSize, 
               <th>Invoice</th>
               <th>Customer</th>
               <th>Issued</th>
-              <th>Due</th>
               <th>Status</th>
               <th className="right">Total</th>
               <th className="right">View</th>
@@ -211,11 +206,8 @@ export default function AdminInvoices({ invoices = [], jobs = [], priceForSize, 
                   <p className="field-hint">{[invoice.location, invoice.phone].filter(Boolean).join(' · ') || '—'}</p>
                 </td>
                 <td>{formatDate(invoice.issueDate)}</td>
-                <td>{formatDate(invoice.dueDate)}</td>
                 <td>
-                  <span className={`status-pill ${isOverdue(invoice) ? 'is-overdue' : ''}`}>
-                    {isOverdue(invoice) ? 'Overdue' : invoiceStatusLabel(invoice.status)}
-                  </span>
+                  <span className="status-pill">{invoiceStatusLabel(invoice.status)}</span>
                 </td>
                 <td className="right" style={{ fontWeight: 600, color: 'var(--color-secondary)' }}>{formatCedis(invoiceTotal(invoice))}</td>
                 <td className="right">
@@ -234,7 +226,7 @@ export default function AdminInvoices({ invoices = [], jobs = [], priceForSize, 
             ))}
             {visible.length === 0 && (
               <tr>
-                <td colSpan={7} style={{ padding: '2.5rem 1rem', textAlign: 'center', color: 'var(--color-muted)' }}>
+                <td colSpan={6} style={{ padding: '2.5rem 1rem', textAlign: 'center', color: 'var(--color-muted)' }}>
                   {invoices.length === 0 ? 'No invoices yet. Create one from a booking or start a blank invoice.' : 'No invoices match this filter.'}
                 </td>
               </tr>
@@ -296,10 +288,6 @@ export default function AdminInvoices({ invoices = [], jobs = [], priceForSize, 
               <label className="field">
                 Issue date
                 <input className="input" type="date" value={form.issueDate} onChange={(e) => setForm({ ...form, issueDate: e.target.value })} />
-              </label>
-              <label className="field">
-                Due date
-                <input className="input" type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
               </label>
               <label className="field">
                 Discount (GH₵)

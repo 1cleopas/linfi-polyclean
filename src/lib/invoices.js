@@ -20,8 +20,3 @@ export function invoiceSubtotal(invoice) {
 export function invoiceTotal(invoice) {
   return Math.max(0, invoiceSubtotal(invoice) - (Number(invoice.discount) || 0))
 }
-
-export function isOverdue(invoice, today = new Date()) {
-  if (invoice.status !== 'sent' || !invoice.dueDate) return false
-  return invoice.dueDate < today.toISOString().slice(0, 10)
-}
