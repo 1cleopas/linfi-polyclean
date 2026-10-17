@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { company } from '../data/content'
+import { company, payment } from '../data/content'
 import { getAdminToken, listAdminInvoices } from '../lib/api'
 import { invoiceStatusLabel, invoiceSubtotal, invoiceTotal, lineTotal } from '../lib/invoices'
 import { buildInvoicePdf } from '../lib/receiptPdf'
 import Button from '../components/Button'
+import PaymentDetails from '../components/PaymentDetails'
 
 function formatCedis(amount) {
   return `GH₵${Number(amount || 0).toLocaleString('en-GH', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
@@ -28,6 +29,7 @@ export function invoicePdf(invoice) {
     number: invoice.number,
     issued: formatDate(invoice.issueDate),
     status: invoiceStatusLabel(invoice.status),
+    paid: invoice.status === 'paid',
     billTo: {
       name: invoice.customerName,
       details: [invoice.phone, invoice.location, invoice.gpsAddress ? `GPS: ${invoice.gpsAddress}` : ''],
@@ -43,6 +45,7 @@ export function invoicePdf(invoice) {
     total: pdfCedis(invoiceTotal(invoice)),
     notes: invoice.notes,
     company,
+    payment,
   })
 }
 
@@ -111,7 +114,7 @@ export default function Invoice() {
       const filename = `${invoice.number}.pdf`
       const blob = await invoicePdf(invoice)
       const file = new File([blob], filename, { type: 'application/pdf' })
-      const caption = `Invoice ${invoice.number} for ${invoice.customerName} from ${company.name}: ${formatCedis(invoiceTotal(invoice))} due.`
+      const caption = `Invoice ${invoice.number} for ${invoice.customerName} from ${company.name}: ${formatCedis(invoiceTotal(invoice))} due after the work is done. Pay by MoMo: dial *170#, MoMoPay, Merchant ID ${payment.merchantId} (${payment.merchantName}), reference ${invoice.number}.`
 
       if (navigator.canShare?.({ files: [file] })) {
         try {
@@ -225,9 +228,11 @@ export default function Invoice() {
             )}
 
             <div className="receipt-total">
-              <p className="field-hint" style={{ fontWeight: 600, margin: 0 }}>Total due</p>
+              <p className="field-hint" style={{ fontWeight: 600, margin: 0 }}>{invoice.status === 'paid' ? 'Total paid' : 'Total due'}</p>
               <p className="headline" style={{ margin: 0 }}>{formatCedis(invoiceTotal(invoice))}</p>
             </div>
+
+            <PaymentDetails reference={invoice.number} paid={invoice.status === 'paid'} />
 
             {invoice.notes && (
               <p className="field-hint" style={{ marginTop: '1.5rem', lineHeight: 1.5, whiteSpace: 'pre-line' }}>{invoice.notes}</p>

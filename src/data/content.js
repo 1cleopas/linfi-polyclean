@@ -23,6 +23,18 @@ export const company = {
   location: 'Accra, Ghana',
 }
 
+/* Payment is by MTN MoMo only, once the job is finished.
+   Merchant name is spelled exactly as registered with MoMo. */
+export const payment = {
+  method: 'MTN Mobile Money (MoMoPay)',
+  terms: 'Payment is made only after the work is done, by Mobile Money (MoMo) only.',
+  merchantId: '925762',
+  merchantName: 'LINIFI POLYCLEAN ENTERPRISE',
+  qrImage: '/images/momo-qr.png',
+  ussdSteps: ['Dial *170#', 'Select MoMoPay and enter Merchant ID 925762', 'Enter the amount and use your invoice or receipt number as the reference', 'Enter your PIN to confirm'],
+  qrSteps: ['Open the MoMo app', "Tap 'Scan & Pay' and scan the QR code", 'Enter the amount and reference, then confirm'],
+}
+
 function isUnset(value) {
   return !value || /\[ADD\b|000000000|example\.com/i.test(String(value))
 }

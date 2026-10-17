@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { company } from '../data/content'
+import { company, payment } from '../data/content'
 import { nextCleaningDate } from '../lib/weeks'
 import { getAdminToken, listAdminJobs, setAdminToken } from '../lib/api'
 import { buildReceiptPdf } from '../lib/receiptPdf'
 import Button from '../components/Button'
+import PaymentDetails from '../components/PaymentDetails'
 
 function receiptNumber(job) {
   const year = new Date(job.createdAt).getFullYear()
@@ -132,6 +133,7 @@ export default function Receipt() {
       rows,
       amount: formatCedis(amount).replace('GH₵', 'GHS '),
       company,
+      payment,
     })
     const file = new File([blob], filename, { type: 'application/pdf' })
     const caption = `Receipt ${number} for ${job.fullName}${jobs.length > 1 ? ` (${jobs.length} tanks)` : ''}`
@@ -216,6 +218,8 @@ export default function Receipt() {
               <p className="field-hint" style={{ fontWeight: 600, margin: 0 }}>Amount</p>
               <p className="headline" style={{ margin: 0 }}>{formatCedis(amount)}</p>
             </div>
+
+            <PaymentDetails reference={number} paid={paid} />
 
             <p className="field-hint" style={{ marginTop: '1.5rem', lineHeight: 1.5 }}>
               Prices may vary due to location and tank position. This receipt covers every tank booked for this customer in the same week.

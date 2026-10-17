@@ -400,7 +400,7 @@ export default function AdminInvoices({ invoices = [], jobs = [], priceForSize, 
                 rows={3}
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                placeholder="Payment details, MoMo number, terms…"
+                placeholder="Anything else the customer should know…"
               />
             </label>
 

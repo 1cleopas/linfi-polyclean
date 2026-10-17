@@ -177,20 +177,17 @@ function companyHeader(company, title, number, details) {
   ]
 }
 
-function pageBlob(commands, watermark) {
-  const resources = watermark
-    ? '/Font << /F1 5 0 R /F2 6 0 R >> /XObject << /Im1 7 0 R >> /ExtGState << /GS1 9 0 R >>'
-    : '/Font << /F1 5 0 R /F2 6 0 R >>'
+function pageBlob(commands, watermark, qr) {
   const objects = [
     ascii('<< /Type /Catalog /Pages 2 0 R >>'),
     ascii('<< /Type /Pages /Kids [3 0 R] /Count 1 >>'),
-    ascii(
-      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Group << /Type /Group /S /Transparency /CS /DeviceRGB >> /Contents 4 0 R /Resources << ${resources} >> >>`,
-    ),
+    null,
     streamObject(ascii(commands.join('\n'))),
     ascii('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>'),
     ascii('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'),
   ]
+  const xobjects = []
+  let extGState = ''
 
   if (watermark) {
     objects.push(
@@ -210,9 +207,95 @@ function pageBlob(commands, watermark) {
       ]),
       ascii('<< /Type /ExtGState /ca 0.22 /CA 0.22 >>'),
     )
+    xobjects.push('/Im1 7 0 R')
+    extGState = ' /ExtGState << /GS1 9 0 R >>'
   }
 
+  if (qr) {
+    // PNG image data goes straight into the PDF: both use zlib with PNG row predictors.
+    objects.push(
+      concat([
+        ascii(
+          `<< /Type /XObject /Subtype /Image /Width ${qr.width} /Height ${qr.height} /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode /DecodeParms << /Predictor 15 /Colors 1 /BitsPerComponent 8 /Columns ${qr.width} >> /Length ${qr.data.length} >>\nstream\n`,
+        ),
+        qr.data,
+        ascii('\nendstream'),
+      ]),
+    )
+    xobjects.push(`/Im2 ${objects.length} 0 R`)
+  }
+
+  const xobjectDict = xobjects.length ? ` /XObject << ${xobjects.join(' ')} >>` : ''
+  objects[2] = ascii(
+    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Group << /Type /Group /S /Transparency /CS /DeviceRGB >> /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R >>${xobjectDict}${extGState} >> >>`,
+  )
+
   return new Blob([pdfBytes(objects)], { type: 'application/pdf' })
+}
+
+// Reads an 8-bit greyscale, non-interlaced PNG (the MoMo QR code) without decoding its pixels.
+async function loadQr(qrBytes, src) {
+  const bytes = qrBytes ? new Uint8Array(qrBytes) : new Uint8Array(await (await fetch(src)).arrayBuffer())
+  let offset = 8
+  let width = 0
+  let height = 0
+  const idatParts = []
+  while (offset + 8 < bytes.length) {
+    const length = readU32(bytes, offset)
+    const type = String.fromCharCode(bytes[offset + 4], bytes[offset + 5], bytes[offset + 6], bytes[offset + 7])
+    const data = bytes.subarray(offset + 8, offset + 8 + length)
+    if (type === 'IHDR') {
+      width = readU32(data, 0)
+      height = readU32(data, 4)
+      if (data[8] !== 8 || data[9] !== 0 || data[12] !== 0) throw new Error('Unsupported QR image')
+    } else if (type === 'IDAT') {
+      idatParts.push(data)
+    } else if (type === 'IEND') {
+      break
+    }
+    offset += 12 + length
+  }
+  return { width, height, data: concat(idatParts) }
+}
+
+async function paymentQr(payment, qrBytes) {
+  if (!payment?.qrImage && !qrBytes) return null
+  try {
+    return await loadQr(qrBytes, payment.qrImage)
+  } catch {
+    return null
+  }
+}
+
+// Where the payment section starts; page content must stay above it.
+function paymentTop(paid) {
+  return paid ? 125 : 212
+}
+
+function paymentCommands(payment, { paid, reference, qr }) {
+  if (!payment) return []
+  if (paid) {
+    return [
+      '0.75 w 48 118 m 547 118 l S',
+      line('PAYMENT', 11, 48, 98),
+      line('Payment received by Mobile Money (MoMo). Thank you.', 10, 48, 82, 'F2'),
+      line(`Merchant: ${payment.merchantName} - ID ${payment.merchantId}`, 9, 48, 68, 'F2'),
+    ]
+  }
+  const commands = [
+    '0.75 w 48 205 m 547 205 l S',
+    line('HOW TO PAY', 11, 48, 186),
+    line(payment.terms, 10, 48, 170, 'F2'),
+    line(`Merchant ID: ${payment.merchantId}`, 12, 48, 150),
+    line(`Merchant name: ${payment.merchantName}`, 10, 48, 134, 'F2'),
+    reference ? line(`Reference: ${reference}`, 10, 48, 120, 'F2') : '',
+    line(`Dial *170# > MoMoPay > Merchant ID ${payment.merchantId} > amount and reference > PIN.`, 9, 48, 100, 'F2'),
+    line(qr ? 'Or scan the QR code with the MoMo app (Scan & Pay).' : 'Or use Scan & Pay in the MoMo app.', 9, 48, 86, 'F2'),
+  ].filter(Boolean)
+  if (qr) {
+    commands.push('q 112 0 0 112 435 70 cm /Im2 Do Q', line('Scan to pay with MoMo', 8, 448, 58, 'F2'))
+  }
+  return commands
 }
 
 function clip(value, max) {
@@ -236,8 +319,9 @@ function wrap(value, width) {
   return lines
 }
 
-export async function buildReceiptPdf({ number, date, paid, rows, amount, company, logoBytes }) {
+export async function buildReceiptPdf({ number, date, paid, rows, amount, company, payment, logoBytes, qrBytes }) {
   const { watermark, commands } = await watermarkCommands(logoBytes)
+  const qr = paid ? null : await paymentQr(payment, qrBytes)
   commands.push(...companyHeader(company, 'RECEIPT', number, [[date, 'F2'], [paid ? 'PAID' : 'UNPAID', 'F1']]))
 
   let textY = 660
@@ -255,14 +339,17 @@ export async function buildReceiptPdf({ number, date, paid, rows, amount, compan
   textY -= 40
   commands.push(line('Prices may vary due to location and tank position.', 10, 48, textY, 'F2'))
   commands.push(line('This receipt covers every tank booked for this customer.', 10, 48, textY - 16, 'F2'))
+  commands.push(...paymentCommands(payment, { paid, reference: number, qr }))
 
-  return pageBlob(commands, watermark)
+  return pageBlob(commands, watermark, qr)
 }
 
 const MAX_INVOICE_LINES = 16
 
-export async function buildInvoicePdf({ number, issued, status, billTo, items, subtotal, discount, total, notes, company, logoBytes }) {
+export async function buildInvoicePdf({ number, issued, status, paid, billTo, items, subtotal, discount, total, notes, company, payment, logoBytes, qrBytes }) {
   const { watermark, commands } = await watermarkCommands(logoBytes)
+  const qr = paid ? null : await paymentQr(payment, qrBytes)
+  const floor = payment ? paymentTop(paid) : 60
   commands.push(...companyHeader(company, 'INVOICE', number, [[`Issued ${issued}`, 'F2'], [status.toUpperCase(), 'F1']]))
 
   let textY = 662
@@ -284,8 +371,11 @@ export async function buildInvoicePdf({ number, issued, status, billTo, items, s
   textY -= 8
   commands.push(`0.5 w 48 ${textY} m 547 ${textY} l S`)
 
-  const shown = items.slice(0, MAX_INVOICE_LINES)
-  for (const item of shown) {
+  const shown = []
+  for (const item of items.slice(0, MAX_INVOICE_LINES)) {
+    // Leave room for the totals (about 95pt) above the payment section.
+    if (textY - 34 < floor + 95) break
+    shown.push(item)
     textY -= 20
     const [first = '-', ...rest] = wrap(item.description, 48)
     commands.push(
@@ -313,14 +403,24 @@ export async function buildInvoicePdf({ number, issued, status, billTo, items, s
     commands.push(line('Discount', 11, 350, textY, 'F2'), line(`- ${discount}`, 11, 480, textY))
   }
   textY -= 30
-  commands.push(line('Total due', 12, 350, textY, 'F2'), line(total, 16, 480, textY))
+  commands.push(line(paid ? 'Total paid' : 'Total due', 12, 350, textY, 'F2'), line(total, 16, 480, textY))
 
-  textY -= 40
-  for (const noteLine of wrap(notes, 95).slice(0, 5)) {
+  textY -= 26
+  // Notes come first; the "prices may vary" line is dropped when the notes need its space.
+  const noteLines = wrap(notes, 95)
+  let noteRoom = Math.floor((textY - floor - 20) / 14)
+  const showPricesLine = noteLines.length <= noteRoom
+  if (!showPricesLine) noteRoom = Math.floor((textY - floor - 6) / 14)
+  const shownNotes = noteLines.slice(0, Math.max(0, Math.min(5, noteRoom)))
+  if (shownNotes.length < noteLines.length && shownNotes.length) {
+    shownNotes[shownNotes.length - 1] = `${clip(shownNotes[shownNotes.length - 1], 92)}...`
+  }
+  for (const noteLine of shownNotes) {
     commands.push(line(noteLine, 10, 48, textY, 'F2'))
     textY -= 14
   }
-  commands.push(line('Prices may vary due to location and tank position.', 10, 48, Math.min(textY - 6, 80), 'F2'))
+  if (showPricesLine) commands.push(line('Prices may vary due to location and tank position.', 10, 48, textY - 4, 'F2'))
+  commands.push(...paymentCommands(payment, { paid, reference: number, qr }))
 
-  return pageBlob(commands, watermark)
+  return pageBlob(commands, watermark, qr)
 }

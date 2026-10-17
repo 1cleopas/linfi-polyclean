@@ -1563,6 +1563,88 @@ h4,
   background: var(--color-secondary);
 }
 
+.payment-box {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+  border: 1px solid rgb(195 198 209 / 0.6);
+  border-radius: 1rem;
+  background: #fff;
+  padding: 1.25rem;
+  font-size: 0.875rem;
+  color: var(--color-primary);
+}
+
+.payment-box .eyebrow {
+  margin-bottom: 0.5rem;
+}
+
+.payment-terms,
+.payment-paid {
+  margin: 0;
+  font-weight: 600;
+}
+
+.payment-ids {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.75rem 0 0;
+}
+
+.payment-ids div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.payment-ids dt {
+  color: var(--color-muted);
+}
+
+.payment-ids dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+
+.payment-step-title {
+  margin: 0.9rem 0 0;
+  font-weight: 600;
+}
+
+.payment-box ol {
+  margin: 0.35rem 0 0;
+  padding-left: 1.25rem;
+  color: var(--color-muted);
+  line-height: 1.6;
+}
+
+.payment-qr {
+  margin: 0;
+  justify-self: center;
+  text-align: center;
+}
+
+.payment-qr img {
+  display: block;
+  width: 9.5rem;
+  height: 9.5rem;
+  image-rendering: pixelated;
+}
+
+.payment-qr figcaption {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+@media (min-width: 640px) {
+  .payment-box:not(.is-paid) {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+}
+
 .legal {
   max-width: 46rem;
   color: var(--color-ink);
