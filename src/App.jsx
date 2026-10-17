@@ -8,6 +8,7 @@ import Pricing from './pages/Pricing'
 import Contact from './pages/Contact'
 import Admin from './pages/Admin'
 import Receipt from './pages/Receipt'
+import Invoice from './pages/Invoice'
 import NotFound from './pages/NotFound'
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
       <Routes>
         <Route path="/admin" element={<Admin />} />
         <Route path="/admin/receipt/:id" element={<Receipt />} />
+        <Route path="/admin/invoice/:id" element={<Invoice />} />
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
           <Route path="/services" element={<Services />} />

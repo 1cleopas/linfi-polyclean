@@ -90,3 +90,19 @@ export function updateAdminWorker(id, payload) {
 export function deleteAdminWorker(id) {
   return request(`/api/admin/workers/${id}`, { method: 'DELETE', auth: true })
 }
+
+export function listAdminInvoices() {
+  return request('/api/admin/invoices', { auth: true })
+}
+
+export function createAdminInvoice(payload) {
+  return request('/api/admin/invoices', { method: 'POST', auth: true, body: payload })
+}
+
+export function updateAdminInvoice(id, payload) {
+  return request(`/api/admin/invoices/${id}`, { method: 'PATCH', auth: true, body: payload })
+}
+
+export function deleteAdminInvoice(id) {
+  return request(`/api/admin/invoices/${id}`, { method: 'DELETE', auth: true })
+}

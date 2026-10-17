@@ -2131,6 +2131,202 @@ h4,
   color: var(--color-green);
 }
 
+.admin-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 80rem;
+  margin: 0 auto;
+}
+
+.admin-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.admin-side {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 1rem;
+  background: #fff;
+  padding: 0.75rem;
+  box-shadow: var(--shadow-card);
+}
+
+.admin-side-title {
+  display: none;
+}
+
+.admin-side-nav {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.admin-side-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 0;
+  border-radius: 0.75rem;
+  background: transparent;
+  padding: 0.625rem 0.875rem;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-side-link:hover {
+  background: var(--color-surface);
+}
+
+.admin-side-link.is-active {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.admin-side-signout {
+  color: var(--color-muted);
+}
+
+.status-pill.is-overdue {
+  background: rgb(186 26 26 / 0.12);
+  color: #ba1a1a;
+}
+
+.invoice-modal {
+  max-width: 48rem;
+}
+
+.invoice-lines {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.invoice-line {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto auto;
+  align-items: end;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+  padding: 0.75rem;
+}
+
+.invoice-line-desc {
+  grid-column: 1 / -1;
+}
+
+.invoice-line .input {
+  background: #fff;
+}
+
+.invoice-line-total {
+  margin: 0;
+  padding-bottom: 0.75rem;
+  font-weight: 600;
+  color: var(--color-secondary);
+  white-space: nowrap;
+}
+
+.icon-button {
+  display: flex;
+  width: 2.75rem;
+  height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  background: #fff;
+  color: #ba1a1a;
+}
+
+.invoice-sums {
+  grid-template-columns: 1fr !important;
+}
+
+.invoice-table {
+  width: 100%;
+  margin-top: 1.5rem;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.invoice-table th {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgb(195 198 209 / 0.6);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--color-muted);
+}
+
+.invoice-table td {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgb(195 198 209 / 0.3);
+  color: var(--color-primary);
+}
+
+.invoice-table .right {
+  padding-left: 0.75rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+  .invoice-line {
+    grid-template-columns: minmax(0, 3fr) 5rem 7rem auto auto;
+  }
+
+  .invoice-line-desc {
+    grid-column: auto;
+  }
+}
+
+@media (min-width: 1024px) {
+  .admin-shell {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 2rem;
+  }
+
+  .admin-side {
+    position: sticky;
+    top: 2rem;
+    flex: 0 0 14rem;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1rem;
+  }
+
+  .admin-side-title {
+    display: block;
+    margin: 0.25rem 0.5rem 0.75rem;
+  }
+
+  .admin-side-nav {
+    flex-direction: column;
+  }
+
+  .admin-side-signout {
+    margin-top: 1rem;
+  }
+}
+
 .reveal {
   opacity: 0;
   transform: translateY(2rem);

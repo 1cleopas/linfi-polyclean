@@ -5,6 +5,7 @@ import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import { join } from 'node:path'
 import { countWeekBookings, createJob, createJobs, deleteJob, jobsFilePath, listJobs, replaceAllJobs, updateJob } from './store.js'
 import { createWorker, deleteWorker, listWorkers, updateWorker, workersFilePath } from './workers.js'
+import { createInvoice, deleteInvoice, invoicesFilePath, listInvoices, updateInvoice } from './invoices.js'
 
 const app = express()
 const adminPassword = process.env.ADMIN_PASSWORD || 'linfi-admin'
@@ -225,6 +226,40 @@ app.delete('/api/admin/workers/:id', requireAdmin, (req, res) => {
   res.status(204).end()
 })
 
+app.get('/api/admin/invoices', requireAdmin, (_req, res) => {
+  res.json({ invoices: listInvoices() })
+})
+
+app.post('/api/admin/invoices', requireAdmin, (req, res) => {
+  try {
+    const invoice = createInvoice(req.body || {})
+    res.status(201).json({ invoice })
+  } catch (error) {
+    res.status(400).json({ error: error.message })
+  }
+})
+
+app.patch('/api/admin/invoices/:id', requireAdmin, (req, res) => {
+  try {
+    const invoice = updateInvoice(req.params.id, req.body || {})
+    if (!invoice) {
+      res.status(404).json({ error: 'Invoice not found.' })
+      return
+    }
+    res.json({ invoice })
+  } catch (error) {
+    res.status(400).json({ error: error.message })
+  }
+})
+
+app.delete('/api/admin/invoices/:id', requireAdmin, (req, res) => {
+  if (!deleteInvoice(req.params.id)) {
+    res.status(404).json({ error: 'Invoice not found.' })
+    return
+  }
+  res.status(204).end()
+})
+
 const dist = join(rootDir, 'dist')
 const indexFile = join(dist, 'index.html')
 if (existsSync(indexFile)) {
@@ -238,4 +273,5 @@ app.listen(port, '0.0.0.0', () => {
   console.log(`LINFI POLYCLEAN server listening on 0.0.0.0:${port}`)
   console.log(`Job file: ${jobsFilePath()}`)
   console.log(`Worker file: ${workersFilePath()}`)
+  console.log(`Invoice file: ${invoicesFilePath()}`)
 })

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { CalendarDays, CircleDollarSign, ClipboardList, Eye, EyeOff, LogOut, Plus, ReceiptText, Search } from 'lucide-react'
+import { CalendarDays, CircleDollarSign, ClipboardList, Eye, EyeOff, FileText, LogOut, Plus, ReceiptText, Search, Users } from 'lucide-react'
 import { services, tankSizes, tankTypes } from '../data/content'
 import { nextCleaningDate, workWeeksForMonths } from '../lib/weeks'
 import {
@@ -7,12 +7,14 @@ import {
   createAdminJob,
   deleteAdminJob,
   getAdminToken,
+  listAdminInvoices,
   listAdminJobs,
   listAdminWorkers,
   setAdminToken,
   updateAdminJob,
   wakeAdminApi,
 } from '../lib/api'
+import AdminInvoices from '../components/AdminInvoices'
 import AdminSalaries from '../components/AdminSalaries'
 import Button from '../components/Button'
 
@@ -96,6 +98,17 @@ function priceForSize(size) {
   return PRICE_LIST.find((item) => item.size === size)?.amount
 }
 
+const VIEWS = [
+  { value: 'jobs', label: 'Jobs & bookings', icon: ClipboardList },
+  { value: 'invoices', label: 'Invoices', icon: FileText },
+  { value: 'salaries', label: 'Salaries', icon: Users },
+]
+
+function viewFromHash() {
+  const hash = window.location.hash.replace('#', '')
+  return VIEWS.some((view) => view.value === hash) ? hash : 'jobs'
+}
+
 export default function Admin() {
   const [tokenReady, setTokenReady] = useState(Boolean(getAdminToken()))
   const [password, setPassword] = useState('')
@@ -103,6 +116,8 @@ export default function Admin() {
   const [submitting, setSubmitting] = useState(false)
   const [jobs, setJobs] = useState([])
   const [workers, setWorkers] = useState([])
+  const [invoices, setInvoices] = useState([])
+  const [view, setView] = useState(viewFromHash)
   const [error, setError] = useState('')
   const [loadError, setLoadError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -136,13 +151,26 @@ export default function Admin() {
     return undefined
   }, [tokenReady])
 
+  useEffect(() => {
+    const onHash = () => setView(viewFromHash())
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+
+  function openView(value) {
+    setView(value)
+    window.history.replaceState(null, '', value === 'jobs' ? window.location.pathname : `#${value}`)
+    window.scrollTo({ top: 0 })
+  }
+
   async function refresh() {
     const seq = ++requestSeq.current
     try {
-      const [jobData, workerData] = await Promise.all([listAdminJobs(), listAdminWorkers()])
+      const [jobData, workerData, invoiceData] = await Promise.all([listAdminJobs(), listAdminWorkers(), listAdminInvoices()])
       if (seq !== requestSeq.current) return
       setJobs(jobData.jobs || [])
       setWorkers(workerData.workers || [])
+      setInvoices(invoiceData.invoices || [])
       setLoadError('')
     } catch (err) {
       if (seq !== requestSeq.current) return
@@ -346,33 +374,72 @@ export default function Admin() {
 
   return (
     <main className="admin-page">
-      <div className="wrap">
+      <div className="admin-shell">
+        <aside className="admin-side" aria-label="Dashboard sections">
+          <p className="eyebrow admin-side-title">LINFI POLYCLEAN</p>
+          <nav className="admin-side-nav">
+            {VIEWS.map(({ value, label, icon: Icon }) => (
+              <button
+                key={value}
+                type="button"
+                className={`admin-side-link ${view === value ? 'is-active' : ''}`}
+                aria-current={view === value ? 'page' : undefined}
+                onClick={() => openView(value)}
+              >
+                <Icon className="icon-sm" aria-hidden="true" />
+                {label}
+              </button>
+            ))}
+          </nav>
+          <button
+            type="button"
+            className="admin-side-link admin-side-signout"
+            onClick={() => {
+              setAdminToken('')
+              setTokenReady(false)
+            }}
+          >
+            <LogOut className="icon-sm" aria-hidden="true" />
+            Sign out
+          </button>
+        </aside>
+
+        <div className="admin-main">
         <div className="admin-head">
           <div>
             <p className="eyebrow">Manager dashboard</p>
-            <h1 className="headline">Jobs, bookings & salaries</h1>
+            <h1 className="headline">{VIEWS.find((item) => item.value === view)?.label}</h1>
           </div>
-          <div className="admin-actions">
-            <Button variant="outline" href="#salaries">
-              Salaries
-            </Button>
-            <Button onClick={() => setAdding(true)}>
-              <Plus className="icon-sm" />
-              Add job
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setAdminToken('')
-                setTokenReady(false)
-              }}
-            >
-              <LogOut className="icon-sm" />
-              Sign out
-            </Button>
-          </div>
+          {view === 'jobs' && (
+            <div className="admin-actions">
+              <Button onClick={() => setAdding(true)}>
+                <Plus className="icon-sm" />
+                Add job
+              </Button>
+            </div>
+          )}
         </div>
 
+        {view === 'invoices' && (
+          <AdminInvoices
+            invoices={invoices}
+            jobs={jobs}
+            priceForSize={priceForSize}
+            onInvoicesUpdated={refresh}
+            onUnauthorized={handleUnauthorized}
+          />
+        )}
+
+        {view === 'salaries' && (
+          <AdminSalaries
+            jobs={jobs}
+            workers={workers}
+            onWorkersUpdated={refresh}
+            onUnauthorized={handleUnauthorized}
+          />
+        )}
+
+        {view === 'jobs' && (<>
         <div className="stat-grid">
           <div className="stat-card">
             <CalendarDays className="icon" />
@@ -407,13 +474,6 @@ export default function Admin() {
           </ul>
           <p className="field-hint" style={{ marginTop: '0.75rem' }}>Add GH₵50 for tanks above 2 storeys.</p>
         </section>
-
-        <AdminSalaries
-          jobs={jobs}
-          workers={workers}
-          onWorkersUpdated={refresh}
-          onUnauthorized={handleUnauthorized}
-        />
 
         <div className="admin-filters">
           <label className="search-wrap">
@@ -539,6 +599,8 @@ export default function Admin() {
               )}
             </tbody>
           </table>
+        </div>
+        </>)}
         </div>
       </div>
 
