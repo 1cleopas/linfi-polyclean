@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { CircleCheckBig } from 'lucide-react'
-import { hasWhatsApp, serviceOptions, tankSizes, tankTypes, tryOpenWhatsApp } from '../data/content'
+import { emailHref, hasWhatsApp, serviceOptions, tankSizes, tankTypes, tryOpenWhatsApp } from '../data/content'
 import { workWeeksForMonths, WORK_DAYS } from '../lib/weeks'
 import { createBooking } from '../lib/api'
 import { useQuote } from '../context/QuoteContext'
@@ -205,6 +205,15 @@ export default function BookingForm() {
             }}
           >
             {copied ? 'Copied' : 'Copy request details'}
+          </Button>
+        )}
+        {emailHref() && (
+          <Button
+            variant="outline"
+            href={emailHref({ subject: `Booking request from ${values.fullName}`, body: message })}
+            style={{ marginTop: '0.75rem' }}
+          >
+            Send by email instead
           </Button>
         )}
         <Button

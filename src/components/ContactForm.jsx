@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { CircleCheckBig } from 'lucide-react'
-import { hasWhatsApp, tryOpenWhatsApp } from '../data/content'
+import { emailHref, hasWhatsApp, tryOpenWhatsApp } from '../data/content'
 import Button from './Button'
 
 const empty = {
@@ -95,6 +95,15 @@ export default function ContactForm() {
             }}
           >
             {copied ? 'Copied' : 'Copy message'}
+          </Button>
+        )}
+        {emailHref() && (
+          <Button
+            variant="outline"
+            href={emailHref({ subject: `Message from ${values.fullName}`, body: message })}
+            style={{ marginTop: '0.75rem' }}
+          >
+            Send by email instead
           </Button>
         )}
         <Button

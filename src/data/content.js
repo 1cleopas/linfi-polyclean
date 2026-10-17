@@ -17,7 +17,7 @@ export const company = {
   phoneHref: 'tel:+233241915966',
   whatsapp: '024 191 5966',
   whatsappDigits: '233241915966',
-  email: 'linfipolyclean@gmail.com',
+  email: 'info@linfipolyclean.com',
   hours: '[ADD HOURS]',
   serviceArea: 'Accra, Ghana',
   location: 'Accra, Ghana',
@@ -47,8 +47,15 @@ export function phoneHref() {
   return hasPhone() ? company.phoneHref : null
 }
 
-export function emailHref() {
-  return hasEmail() ? `mailto:${company.email}` : null
+export function emailHref({ subject, body } = {}) {
+  if (!hasEmail()) return null
+  const query = [
+    subject ? `subject=${encodeURIComponent(subject)}` : '',
+    body ? `body=${encodeURIComponent(body)}` : '',
+  ]
+    .filter(Boolean)
+    .join('&')
+  return `mailto:${company.email}${query ? `?${query}` : ''}`
 }
 
 export function whatsappUrl(message = WHATSAPP_MESSAGE) {
