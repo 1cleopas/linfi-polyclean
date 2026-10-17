@@ -1,4 +1,4 @@
-import { accraAreas, company, images, mapEmbedSrc, testimonials } from '../data/content'
+import { accraAreas, company, images, mapEmbedSrc } from '../data/content'
 import Hero from '../components/Hero'
 import ProblemAwareness from '../components/ProblemAwareness'
 import BeforeAfter from '../components/BeforeAfter'
@@ -7,7 +7,6 @@ import WorkGallery from '../components/WorkGallery'
 import { ServicesGrid } from '../components/ServiceCard'
 import WhyChooseUs from '../components/WhyChooseUs'
 import HowItWorks from '../components/HowItWorks'
-import TestimonialCard from '../components/TestimonialCard'
 import CTA from '../components/CTA'
 import FAQ from '../components/FAQ'
 import Reveal from '../components/Reveal'
@@ -80,22 +79,6 @@ export default function Home() {
                   />
                 </div>
               </Reveal>
-            </div>
-          </div>
-        </section>
-
-        <section className="section" id="reviews">
-          <div className="wrap">
-            <SectionHeader
-              title="What customers say"
-              subtitle="Sample reviews for demonstration. These are placeholder comments, not verified customer reviews."
-            />
-            <div className="review-grid">
-              {testimonials.map((item, i) => (
-                <Reveal key={`${item.location}-${i}`} delay={i * 80} from="scale">
-                  <TestimonialCard item={item} />
-                </Reveal>
-              ))}
             </div>
           </div>
         </section>

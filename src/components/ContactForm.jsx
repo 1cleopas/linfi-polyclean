@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { CircleCheckBig } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { emailHref, hasWhatsApp, tryOpenWhatsApp } from '../data/content'
 import Button from './Button'
 
@@ -152,6 +153,9 @@ export default function ContactForm() {
         <Button type="submit" fullWidth>
           Send Message
         </Button>
+        <p className="field-hint form-privacy-note" style={{ textAlign: 'center', marginTop: '0.75rem' }}>
+          See our <Link to="/privacy">Privacy Policy</Link> for how we handle your details.
+        </p>
       </div>
     </form>
   )

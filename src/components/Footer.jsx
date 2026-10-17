@@ -116,7 +116,12 @@ export default function Footer() {
           )}
         </div>
       </div>
-      <div className="footer-copy">© {new Date().getFullYear()} LINFI POLYCLEAN. All rights reserved.</div>
+      <div className="footer-copy">
+        © {new Date().getFullYear()} LINFI POLYCLEAN. All rights reserved.
+        <Link to="/privacy" className="footer-legal">
+          Privacy Policy
+        </Link>
+      </div>
     </footer>
   )
 }

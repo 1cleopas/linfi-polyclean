@@ -1563,6 +1563,73 @@ h4,
   background: var(--color-secondary);
 }
 
+.legal {
+  max-width: 46rem;
+  color: var(--color-ink);
+  line-height: 1.75;
+}
+
+.legal-updated {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.legal-toc {
+  margin-top: 1.5rem;
+  border-radius: 1rem;
+  background: var(--color-surface);
+  padding: 1.25rem 1.5rem;
+}
+
+.legal-toc ol {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.legal-toc a,
+.legal-section a {
+  color: var(--color-secondary);
+  font-weight: 600;
+}
+
+.legal-section {
+  margin-top: 2.5rem;
+  scroll-margin-top: 6rem;
+}
+
+.legal-section h2 {
+  margin: 0;
+  font-family: var(--font-headline);
+  font-size: 1.375rem;
+  font-weight: 500;
+  color: var(--color-primary);
+}
+
+.legal-section p,
+.legal-section ul {
+  margin: 0.75rem 0 0;
+}
+
+.legal-section ul {
+  display: grid;
+  gap: 0.5rem;
+  padding-left: 1.25rem;
+}
+
+.footer-legal {
+  margin-left: 0.5rem;
+  color: inherit;
+  text-decoration: underline;
+}
+
+.form-privacy-note a {
+  color: var(--color-secondary);
+  font-weight: 600;
+}
+
 .footer-copy {
   border-top: 1px solid rgb(255 255 255 / 0.1);
   padding: 1.25rem 1rem;

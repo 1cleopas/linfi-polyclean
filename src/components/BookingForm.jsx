@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { CircleCheckBig } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { emailHref, hasWhatsApp, serviceOptions, tankSizes, tankTypes, tryOpenWhatsApp } from '../data/content'
 import { workWeeksForMonths, WORK_DAYS } from '../lib/weeks'
 import { createBooking } from '../lib/api'
@@ -373,6 +374,9 @@ export default function BookingForm() {
           {hasWhatsApp()
             ? 'Submitting opens WhatsApp with your details so LINFI POLYCLEAN can respond quickly.'
             : 'Submit the form to prepare your request. Add a WhatsApp number in the site contact details before publishing.'}
+        </p>
+        <p className="field-hint form-privacy-note" style={{ textAlign: 'center', marginTop: '0.5rem' }}>
+          We use your details only to arrange your cleaning. See our <Link to="/privacy">Privacy Policy</Link>.
         </p>
       </div>
     </form>

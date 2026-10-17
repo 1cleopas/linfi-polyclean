@@ -229,37 +229,6 @@ export const steps = [
   },
 ]
 
-export const testimonials = [
-  {
-    quote:
-      'Very professional service. They arrived on time, cleaned the tank thoroughly, and explained the process clearly.',
-    name: 'Customer',
-    location: 'Accra',
-    rating: 5,
-  },
-  {
-    quote:
-      'I booked on WhatsApp and they fitted us in the same week. The team was polite and left the compound tidy after the clean.',
-    name: 'Customer',
-    location: 'East Legon',
-    rating: 5,
-  },
-  {
-    quote:
-      'We used them for two tanks at our shop. Straightforward communication and a thorough job on both tanks.',
-    name: 'Customer',
-    location: 'Osu',
-    rating: 5,
-  },
-  {
-    quote:
-      'The before-and-after difference inside the polytank was obvious. Would book again for our next scheduled clean.',
-    name: 'Customer',
-    location: 'Spintex',
-    rating: 5,
-  },
-]
-
 export const accraAreas = [
   'East Legon',
   'Airport Residential',
