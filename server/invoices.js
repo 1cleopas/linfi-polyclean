@@ -74,6 +74,7 @@ function normalizeInvoice(invoice) {
     customerName: String(invoice.customerName || '').trim(),
     phone: String(invoice.phone || '').trim(),
     location: String(invoice.location || '').trim(),
+    gpsAddress: String(invoice.gpsAddress || '').trim().toUpperCase(),
     issueDate: String(invoice.issueDate || '').trim(),
     status: STATUSES.includes(invoice.status) ? invoice.status : 'draft',
     items,

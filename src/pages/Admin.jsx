@@ -32,6 +32,7 @@ const emptyJob = {
   phone: '',
   whatsapp: '',
   location: '',
+  gpsAddress: '',
   service: '',
   tankType: '',
   tankSize: '',
@@ -242,7 +243,7 @@ export default function Admin() {
       if (weekFilter !== 'all' && job.week !== weekFilter) return false
       if (month !== 'all' && jobMonth(job) !== month) return false
       if (!query) return true
-      return [job.fullName, job.phone, job.location, job.week, job.service, job.tankSize]
+      return [job.fullName, job.phone, job.location, job.gpsAddress, job.week, job.service, job.tankSize]
         .join(' ')
         .toLowerCase()
         .includes(query)
@@ -480,7 +481,7 @@ export default function Admin() {
             <Search className="icon-sm" />
             <input
               className="input"
-              placeholder="Search name, phone, area or week"
+              placeholder="Search name, phone, area, GPS or week"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -551,7 +552,7 @@ export default function Admin() {
                     <tr key={job.id} className="is-clickable" onClick={() => setSelected(job)}>
                       <td>
                         <p style={{ margin: 0, fontWeight: 600, color: 'var(--color-primary)' }}>{job.fullName}</p>
-                        <p className="field-hint">{job.location} · {job.phone}</p>
+                        <p className="field-hint">{[job.location, job.gpsAddress, job.phone].filter(Boolean).join(' · ')}</p>
                       </td>
                       <td>
                         {job.week || '—'}
@@ -612,6 +613,7 @@ export default function Admin() {
               <Field label="Name" value={adding ? draft.fullName : selected.fullName} onChange={(value) => (adding ? setDraft({ ...draft, fullName: value }) : setSelected({ ...selected, fullName: value }))} />
               <Field label="Phone" value={adding ? draft.phone : selected.phone} onChange={(value) => (adding ? setDraft({ ...draft, phone: value }) : setSelected({ ...selected, phone: value }))} />
               <Field label="Location" value={adding ? draft.location : selected.location} onChange={(value) => (adding ? setDraft({ ...draft, location: value }) : setSelected({ ...selected, location: value }))} />
+              <Field label="GPS address" value={adding ? draft.gpsAddress : selected.gpsAddress || ''} onChange={(value) => (adding ? setDraft({ ...draft, gpsAddress: value }) : setSelected({ ...selected, gpsAddress: value }))} />
               <label className="field">
                 Week
                 <select

@@ -82,6 +82,7 @@ function buildJob(input, now) {
     phone: String(input.phone || '').trim(),
     whatsapp: String(input.whatsapp || '').trim(),
     location: String(input.location || '').trim(),
+    gpsAddress: String(input.gpsAddress || '').trim().toUpperCase(),
     service: String(input.service || '').trim(),
     tankType: String(input.tankType || '').trim(),
     tankSize: String(input.tankSize || '').trim(),
@@ -149,6 +150,7 @@ export function updateJob(id, patch) {
     if (Number.isNaN(next.amount)) next.amount = null
   }
   if (patch.workerId !== undefined) next.workerId = String(patch.workerId || '').trim()
+  if (patch.gpsAddress !== undefined) next.gpsAddress = String(patch.gpsAddress || '').trim().toUpperCase()
 
   jobs[index] = next
   writeJobs(jobs)

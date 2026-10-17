@@ -18,6 +18,7 @@ function emptyInvoice() {
     customerName: '',
     phone: '',
     location: '',
+    gpsAddress: '',
     issueDate: today(),
     status: 'draft',
     items: [{ ...emptyItem }],
@@ -97,6 +98,7 @@ export default function AdminInvoices({ invoices = [], jobs = [], priceForSize, 
       customerName: lead.fullName || '',
       phone: lead.phone || lead.whatsapp || '',
       location: lead.location || '',
+      gpsAddress: lead.gpsAddress || '',
       jobIds: group.jobs.map((job) => job.id),
       items: group.jobs.map((job) => ({
         description: [job.service || 'Polytank cleaning', job.tankSize, job.week].filter(Boolean).join(' · '),
@@ -284,6 +286,15 @@ export default function AdminInvoices({ invoices = [], jobs = [], priceForSize, 
               <label className="field">
                 Location
                 <input className="input" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
+              </label>
+              <label className="field">
+                GPS address
+                <input
+                  className="input"
+                  value={form.gpsAddress || ''}
+                  onChange={(e) => setForm({ ...form, gpsAddress: e.target.value })}
+                  placeholder="e.g. GA-123-4567"
+                />
               </label>
               <label className="field">
                 Issue date

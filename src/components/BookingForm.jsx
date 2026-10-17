@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { CircleCheckBig } from 'lucide-react'
-import { hasWhatsApp, tankSizes, tankTypes, tryOpenWhatsApp } from '../data/content'
+import { hasWhatsApp, serviceOptions, tankSizes, tankTypes, tryOpenWhatsApp } from '../data/content'
 import { workWeeksForMonths, WORK_DAYS } from '../lib/weeks'
 import { createBooking } from '../lib/api'
 import { useQuote } from '../context/QuoteContext'
@@ -13,6 +13,7 @@ const empty = {
   phone: '',
   whatsapp: '',
   location: '',
+  gpsAddress: '',
   tankType: '',
   tankSize: '',
   tankSizesByTank: [''],
@@ -65,6 +66,7 @@ function bookingMessage(values) {
     `Phone: ${values.phone}`,
     `WhatsApp: ${values.whatsapp || values.phone}`,
     `Location: ${values.location}`,
+    values.gpsAddress ? `GPS address: ${values.gpsAddress}` : '',
     values.service ? `Service: ${values.service}` : '',
     values.tankType ? `Tank type: ${values.tankType}` : '',
     tankSizeList(values)
@@ -113,6 +115,10 @@ export default function BookingForm() {
   const onChange = (e) => {
     const { name, value } = e.target
     setValues((prev) => {
+      if (name === 'service') {
+        const wasAuto = !prev.extra || prev.extra.startsWith(AUTO_PREFIX)
+        return { ...prev, service: value, extra: wasAuto ? (value ? `${AUTO_PREFIX}${value}` : '') : prev.extra }
+      }
       if (name !== 'tanks') return { ...prev, [name]: value }
       const count = sizeFieldCount(value)
       const tankSizesByTank = Array.from({ length: count }, (_, i) => prev.tankSizesByTank?.[i] || (i === 0 ? prev.tankSize : ''))
@@ -146,6 +152,7 @@ export default function BookingForm() {
         phone: values.phone,
         whatsapp: values.whatsapp,
         location: values.location,
+        gpsAddress: values.gpsAddress,
         service: values.service,
         tankType: values.tankType,
         tankSize: tankSizeList(values)[0] || '',
@@ -238,6 +245,31 @@ export default function BookingForm() {
         {errors.location && <span className="field-error">{errors.location}</span>}
       </label>
       <label className="field">
+        GPS Address
+        <input
+          className="input"
+          name="gpsAddress"
+          value={values.gpsAddress}
+          onChange={onChange}
+          onBlur={(e) => setValues((prev) => ({ ...prev, gpsAddress: e.target.value.trim().toUpperCase() }))}
+          placeholder="e.g. GA-123-4567"
+          autoCapitalize="characters"
+        />
+        <span className="field-hint">Your Ghana Post GPS digital address, so our team can find you.</span>
+      </label>
+      <label className="field">
+        Service
+        <select className="select" name="service" value={values.service} onChange={onChange}>
+          <option value="">Select service</option>
+          {values.service && !serviceOptions.includes(values.service) && <option value={values.service}>{values.service}</option>}
+          {serviceOptions.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="field">
         Tank Type
         <select className="select" name="tankType" value={values.tankType} onChange={onChange}>
           <option value="">Select type</option>
@@ -321,8 +353,6 @@ export default function BookingForm() {
           placeholder="Access notes, tank condition, or the service you need"
         />
       </label>
-      <input type="hidden" name="service" value={values.service} />
-      {values.service && <p className="field-hint form-span" style={{ color: 'var(--color-secondary)' }}>Selected service: {values.service}</p>}
       <div className="form-span">
         {saveError && <p className="field-error" style={{ textAlign: 'center', marginBottom: '0.75rem' }}>{saveError}</p>}
         <Button type="submit" fullWidth disabled={saving}>

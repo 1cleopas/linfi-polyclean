@@ -107,6 +107,7 @@ export default function Receipt() {
     ['Customer', job.fullName],
     ['Phone', job.phone],
     ['Location', job.location],
+    ['GPS address', job.gpsAddress],
     ['Service', [...new Set(jobs.map((item) => item.service || 'Polytank cleaning'))].join(', ')],
     ['Number of tanks', String(jobs.length)],
     ...jobs.map((item, index) => [jobs.length > 1 ? `Tank ${index + 1}` : 'Tank size', item.tankSize || 'Size not given']),

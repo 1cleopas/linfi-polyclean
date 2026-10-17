@@ -105,7 +105,7 @@ export default function Invoice() {
             <div style={{ marginTop: '1.5rem' }}>
               <p className="eyebrow">Bill to</p>
               <p style={{ margin: '0.25rem 0 0', fontWeight: 600, color: 'var(--color-primary)' }}>{invoice.customerName}</p>
-              <p className="field-hint">{[invoice.phone, invoice.location].filter(Boolean).join(' · ')}</p>
+              <p className="field-hint">{[invoice.phone, invoice.location, invoice.gpsAddress].filter(Boolean).join(' · ')}</p>
             </div>
 
             <table className="invoice-table">
