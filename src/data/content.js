@@ -100,6 +100,16 @@ export const services = [
     image: '/images/work-interior.jpg',
   },
   {
+    id: 'filter-change',
+    icon: 'filter',
+    name: 'Polytank Cleaning and Water Tank Disinfection/Filter Change',
+    short: 'Full tank cleaning and disinfection, plus a fresh filter for your water system.',
+    description:
+      'Everything in our polytank cleaning and disinfection service, with the water filter changed on the same visit. We clean out sediment, sludge, algae and biofilm, disinfect the tank, then replace the filter so clean storage is matched by clean flow. Tell us your filter type when you book so we come prepared.',
+    quoteValue: 'Polytank Cleaning and Water Tank Disinfection/Filter Change',
+    image: '/images/work-compound.jpg',
+  },
+  {
     id: 'residential',
     icon: 'home',
     name: 'Residential, Apartment & Estate Tank Cleaning',

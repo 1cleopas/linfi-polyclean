@@ -1,6 +1,7 @@
 import {
   Building2,
   Droplets,
+  Filter,
   Home,
   Warehouse,
   Search,
@@ -16,6 +17,7 @@ import Reveal from '../components/Reveal'
 
 const icons = {
   droplets: Droplets,
+  filter: Filter,
   sparkles: Sparkles,
   home: Home,
   building: Building2,

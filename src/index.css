@@ -2678,21 +2678,21 @@ h4,
 
 @media (min-width: 1024px) and (max-width: 1279px) {
   .review-grid,
-  .why-grid,
-  .service-grid {
+  .why-grid {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .service-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (min-width: 1280px) {
   .trust-list,
   .review-grid,
-  .why-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-
+  .why-grid,
   .service-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 

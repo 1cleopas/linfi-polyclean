@@ -2,6 +2,7 @@ import {
   ArrowRight,
   Building2,
   Droplets,
+  Filter,
   Home,
   Warehouse,
   Search,
@@ -14,6 +15,7 @@ import SectionHeader from './SectionHeader'
 
 const icons = {
   droplets: Droplets,
+  filter: Filter,
   sparkles: Sparkles,
   home: Home,
   building: Building2,
