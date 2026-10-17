@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CalendarDays, CircleDollarSign, ClipboardList, Eye, EyeOff, FileText, LogOut, Plus, ReceiptText, Search, Users } from 'lucide-react'
 import { services, tankSizes, tankTypes } from '../data/content'
-import { nextCleaningDate, workWeeksForMonths } from '../lib/weeks'
+import { firstCleaningDate, nextCleaningDate, workWeeksForMonths } from '../lib/weeks'
+import { jobWorkDate } from '../lib/commission'
 import {
   adminLogin,
   createAdminJob,
@@ -55,8 +56,14 @@ function monthKey(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
 }
 
+// Count a job in the month it is worked, matching the payroll figures.
 function jobMonth(job) {
-  return monthKey(new Date(job.createdAt))
+  const date = jobWorkDate(job)
+  return date && !Number.isNaN(date.getTime()) ? monthKey(date) : ''
+}
+
+function weekTime(job) {
+  return firstCleaningDate(job.week)?.getTime() ?? Number.POSITIVE_INFINITY
 }
 
 function statusLabel(value) {
@@ -82,17 +89,25 @@ function leadReceiptId(job, allJobs) {
   return lead?.id || job.id
 }
 
+// Base price per tank size. Sizes must match tankSizes in content.js.
 const PRICE_LIST = [
-  { size: '500L – 1,500L', amount: 300 },
-  { size: '1,501L – 2,500L', amount: 400 },
-  { size: '2,501L – 3,500L', amount: 450 },
-  { size: '3,501L – 4,500L', amount: 550 },
-  { size: '4,501L – 5,500L', amount: 600 },
-  { size: '5,501L – 6,500L', amount: 650 },
-  { size: '6,501L – 7,500L', amount: 700 },
-  { size: '7,501L – 8,500L', amount: 750 },
-  { size: '8,501L – 9,500L', amount: 800 },
-  { size: '10,000L and above', amount: 900 },
+  { size: 'Up to 2,000L', amount: 500 },
+  { size: '2,500L', amount: 550 },
+  { size: '3,000L', amount: 600 },
+  { size: '3,500L', amount: 650 },
+  { size: '4,000L', amount: 700 },
+  { size: '4,500L', amount: 750 },
+  { size: '5,000L', amount: 800 },
+  { size: '5,500L', amount: 850 },
+  { size: '6,000L', amount: 900 },
+  { size: '6,500L', amount: 950 },
+  { size: '7,000L', amount: 1000 },
+  { size: '7,500L', amount: 1100 },
+  { size: '8,000L', amount: 1200 },
+  { size: '8,500L', amount: 1250 },
+  { size: '9,000L', amount: 1300 },
+  { size: '9,500L', amount: 1350 },
+  { size: '10,000L', amount: 1400 },
 ]
 
 function priceForSize(size) {
@@ -252,19 +267,18 @@ export default function Admin() {
     next.sort((a, b) => {
       if (sort === 'amount') return (Number(b.amount) || 0) - (Number(a.amount) || 0)
       if (sort === 'week') {
-        const order = weeks.map((week) => week.label)
-        const aIndex = order.indexOf(a.week)
-        const bIndex = order.indexOf(b.week)
-        return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex)
+        const diff = weekTime(a) - weekTime(b)
+        if (diff) return diff
+        return String(a.createdAt).localeCompare(String(b.createdAt))
       }
       if (sort === 'status') return String(a.status).localeCompare(String(b.status))
       return String(b.createdAt).localeCompare(String(a.createdAt))
     })
     return next
-  }, [jobs, month, search, sort, status, weekFilter, weeks])
+  }, [jobs, month, search, sort, status, weekFilter])
 
   const months = useMemo(() => {
-    const keys = new Set(jobs.map(jobMonth))
+    const keys = new Set(jobs.map(jobMonth).filter(Boolean))
     keys.add(monthKey(new Date()))
     return [...keys].sort().reverse()
   }, [jobs])
@@ -297,8 +311,9 @@ export default function Admin() {
       const data = await updateAdminJob(selected.id, selected)
       setJobs((prev) => prev.map((job) => (job.id === data.job.id ? data.job : job)))
       setSelected(null)
-      await refresh()
+      refresh().catch(() => {})
     } catch (err) {
+      if (err.status === 401) handleUnauthorized()
       setError(err.message)
     }
   }
@@ -311,7 +326,7 @@ export default function Admin() {
       setJobs((prev) => [data.job, ...prev])
       setDraft(emptyJob)
       setAdding(false)
-      await refresh()
+      refresh().catch(() => {})
     } catch (err) {
       setError(err.message)
     }
@@ -319,11 +334,12 @@ export default function Admin() {
 
   async function removeJob(id) {
     if (!window.confirm('Delete this job record?')) return
+    setError('')
     try {
       await deleteAdminJob(id)
       setJobs((prev) => prev.filter((job) => job.id !== id))
       if (selected?.id === id) setSelected(null)
-      await refresh()
+      refresh().catch(() => {})
     } catch (err) {
       setError(err.message)
     }
@@ -413,7 +429,7 @@ export default function Admin() {
           </div>
           {view === 'jobs' && (
             <div className="admin-actions">
-              <Button onClick={() => setAdding(true)}>
+              <Button onClick={() => { setError(''); setDraft(emptyJob); setAdding(true) }}>
                 <Plus className="icon-sm" />
                 Add job
               </Button>
@@ -473,7 +489,6 @@ export default function Admin() {
               </li>
             ))}
           </ul>
-          <p className="field-hint" style={{ marginTop: '0.75rem' }}>Add GH₵50 for tanks above 2 storeys.</p>
         </section>
 
         <div className="admin-filters">
@@ -549,10 +564,10 @@ export default function Admin() {
                   const showReceipt = !shown.has(receiptId)
                   if (showReceipt) shown.add(receiptId)
                   return (
-                    <tr key={job.id} className="is-clickable" onClick={() => setSelected(job)}>
+                    <tr key={job.id} className="is-clickable" onClick={() => { setError(''); setSelected(job) }}>
                       <td>
                         <p style={{ margin: 0, fontWeight: 600, color: 'var(--color-primary)' }}>{job.fullName}</p>
-                        <p className="field-hint">{[job.location, job.gpsAddress, job.phone].filter(Boolean).join(' · ')}</p>
+                        <p className="field-hint">{[job.location, job.gpsAddress, job.phone].filter(Boolean).join(' · ')}{job.source === 'google-form' ? ' · via Google Form' : ''}</p>
                       </td>
                       <td>
                         {job.week || '—'}
@@ -677,7 +692,7 @@ export default function Admin() {
                 </select>
                 {priceForSize(adding ? draft.tankSize : selected.tankSize) != null && (
                   <span className="field-hint">
-                    Base price: {formatCedis(priceForSize(adding ? draft.tankSize : selected.tankSize))}. Add GH₵50 above 2 storeys.
+                    Base price: {formatCedis(priceForSize(adding ? draft.tankSize : selected.tankSize))}.
                   </span>
                 )}
               </label>
@@ -738,6 +753,7 @@ export default function Admin() {
                 onChange={(value) => (adding ? setDraft({ ...draft, notes: value }) : setSelected({ ...selected, notes: value }))}
               />
             </div>
+            {error && <p className="field-error" style={{ marginTop: '1rem' }}>{error}</p>}
             <div className="admin-actions" style={{ marginTop: '1.5rem', flexWrap: 'wrap' }}>
               <Button type="submit">{adding ? 'Save job' : 'Save changes'}</Button>
               <Button
@@ -746,6 +762,7 @@ export default function Admin() {
                 onClick={() => {
                   setSelected(null)
                   setAdding(false)
+                  setError('')
                 }}
               >
                 Close

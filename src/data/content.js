@@ -13,12 +13,12 @@ export const company = {
   name: 'LINFI POLYCLEAN',
   shortName: 'Linfi Polyclean',
   tagline: 'Clean Tank · Safe Life',
-  phone: '024 191 5966',
-  phoneHref: 'tel:+233241915966',
-  whatsapp: '024 191 5966',
-  whatsappDigits: '233241915966',
+  phone: '059 984 2689',
+  phoneHref: 'tel:+233599842689',
+  whatsapp: '059 984 2689',
+  whatsappDigits: '233599842689',
   email: 'info@linfipolyclean.com',
-  hours: '[ADD HOURS]',
+  hours: 'Tuesday – Sunday, 8:00am – 6:00pm (Monday closed)',
   serviceArea: 'Accra, Ghana',
   location: 'Accra, Ghana',
 }
@@ -75,7 +75,6 @@ export const navLinks = [
   { to: '/#home', label: 'Home' },
   { to: '/about', label: 'About Us' },
   { to: '/#services', label: 'Our Services' },
-  { to: '/#pricing', label: 'Pricing' },
   { to: '/#how-it-works', label: 'How It Works' },
   { to: '/#why-choose-us', label: 'Why Choose Us' },
   { to: '/#faqs', label: 'FAQs' },
@@ -133,16 +132,24 @@ export const tankTypes = [
 ]
 
 export const tankSizes = [
-  '500L – 1,500L',
-  '1,501L – 2,500L',
-  '2,501L – 3,500L',
-  '3,501L – 4,500L',
-  '4,501L – 5,500L',
-  '5,501L – 6,500L',
-  '6,501L – 7,500L',
-  '7,501L – 8,500L',
-  '8,501L – 9,500L',
-  '10,000L and above',
+  'Up to 2,000L',
+  '2,500L',
+  '3,000L',
+  '3,500L',
+  '4,000L',
+  '4,500L',
+  '5,000L',
+  '5,500L',
+  '6,000L',
+  '6,500L',
+  '7,000L',
+  '7,500L',
+  '8,000L',
+  '8,500L',
+  '9,000L',
+  '9,500L',
+  '10,000L',
+  'Above 10,000L',
   'Not sure',
 ]
 
@@ -243,15 +250,6 @@ export const testimonials = [
   },
 ]
 
-export const pricingFactors = [
-  'Tank size',
-  'Number of tanks',
-  'Tank accessibility',
-  'Location',
-  'Level of dirt/buildup',
-  'Type of service required',
-]
-
 export const accraAreas = [
   'East Legon',
   'Airport Residential',
@@ -292,10 +290,6 @@ export const faqs = [
   {
     q: 'Do you provide disinfection services?',
     a: 'Yes. Polytank cleaning includes water tank disinfection. We clean the tank, then apply professional disinfection procedures designed to improve tank hygiene. This helps maintain a cleaner storage environment; it does not, on its own, guarantee that water is safe to drink.',
-  },
-  {
-    q: 'How much does polytank cleaning cost?',
-    a: 'Pricing depends on tank size, number of tanks, accessibility, location, the level of dirt or buildup, and the type of service required. Book a cleaning or WhatsApp us with those details and we will confirm the price — we do not publish a single flat rate because jobs vary.',
   },
   {
     q: 'Which areas in Accra do you cover?',

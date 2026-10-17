@@ -1,46 +1,15 @@
-import './loadEnv.js'
-import { mkdirSync, readFileSync, writeFileSync, existsSync, renameSync, unlinkSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const rootDir = fileURLToPath(new URL('..', import.meta.url))
-const dataDir = process.env.DATA_DIR || join(rootDir, 'data')
-const filePath = join(dataDir, 'invoices.json')
+import { readList, storageLabel, writeList } from './db.js'
 
 const STATUSES = ['draft', 'sent', 'paid', 'cancelled']
 
-function ensureFile() {
-  mkdirSync(dirname(filePath), { recursive: true })
-  if (!existsSync(filePath)) {
-    writeFileSync(filePath, '[]', 'utf8')
-  }
-}
-
 function readInvoices() {
-  ensureFile()
-  try {
-    const parsed = JSON.parse(readFileSync(filePath, 'utf8'))
-    return Array.isArray(parsed) ? parsed.map(normalizeInvoice) : []
-  } catch {
-    return []
-  }
+  return readList('invoices')
+    .filter((invoice) => invoice && typeof invoice === 'object' && invoice.id)
+    .map(normalizeInvoice)
 }
 
 function writeInvoices(invoices) {
-  mkdirSync(dirname(filePath), { recursive: true })
-  const payload = JSON.stringify(invoices, null, 2)
-  const tmp = `${filePath}.${process.pid}.tmp`
-  writeFileSync(tmp, payload, 'utf8')
-  try {
-    renameSync(tmp, filePath)
-  } catch {
-    writeFileSync(filePath, payload, 'utf8')
-    try {
-      unlinkSync(tmp)
-    } catch {
-      // The temp file can remain if Windows still has it open.
-    }
-  }
+  return writeList('invoices', invoices)
 }
 
 function invalidError(message) {
@@ -104,14 +73,14 @@ function nextNumber(invoices, now) {
 }
 
 export function invoicesFilePath() {
-  return filePath
+  return storageLabel('invoices')
 }
 
 export function listInvoices() {
   return readInvoices().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
 }
 
-export function createInvoice(input) {
+export async function createInvoice(input) {
   const existing = readInvoices()
   const now = new Date().toISOString()
   const invoice = validate(
@@ -127,11 +96,11 @@ export function createInvoice(input) {
   if (existing.some((item) => item.number === invoice.number)) {
     throw invalidError('That invoice number is already used.')
   }
-  writeInvoices([...existing, invoice])
+  await writeInvoices([...existing, invoice])
   return invoice
 }
 
-export function updateInvoice(id, patch) {
+export async function updateInvoice(id, patch) {
   const invoices = readInvoices()
   const index = invoices.findIndex((invoice) => invoice.id === id)
   if (index === -1) return null
@@ -152,14 +121,14 @@ export function updateInvoice(id, patch) {
   }
 
   invoices[index] = next
-  writeInvoices(invoices)
+  await writeInvoices(invoices)
   return next
 }
 
-export function deleteInvoice(id) {
+export async function deleteInvoice(id) {
   const invoices = readInvoices()
   const next = invoices.filter((invoice) => invoice.id !== id)
   if (next.length === invoices.length) return false
-  writeInvoices(next)
+  await writeInvoices(next)
   return true
 }

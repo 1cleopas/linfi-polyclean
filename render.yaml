@@ -1,18 +1,15 @@
 services:
   - type: web
-    name: linfi-polyclean
+    name: linfi-polyclean-live
     runtime: node
-    plan: starter
+    plan: free
     region: frankfurt
     buildCommand: npm ci && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
-    disk:
-      name: linfi-jobs
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
       - key: ADMIN_PASSWORD
         sync: false
-      - key: DATA_DIR
-        value: /var/data
+      # Free Postgres connection string (for example from Neon). Without it, data is wiped on every restart.
+      - key: DATABASE_URL
+        sync: false

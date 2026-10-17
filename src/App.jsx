@@ -1,10 +1,9 @@
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { QuoteProvider } from './context/QuoteContext'
 import Layout from './components/Layout'
 import Home from './pages/Home'
 import Services from './pages/Services'
 import About from './pages/About'
-import Pricing from './pages/Pricing'
 import Contact from './pages/Contact'
 import Admin from './pages/Admin'
 import Receipt from './pages/Receipt'
@@ -22,7 +21,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/services" element={<Services />} />
           <Route path="/about" element={<About />} />
-          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/pricing" element={<Navigate to="/" replace />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="*" element={<NotFound />} />
         </Route>

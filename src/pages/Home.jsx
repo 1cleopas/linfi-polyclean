@@ -1,4 +1,4 @@
-import { accraAreas, company, images, mapEmbedSrc, pricingFactors, testimonials } from '../data/content'
+import { accraAreas, company, images, mapEmbedSrc, testimonials } from '../data/content'
 import Hero from '../components/Hero'
 import ProblemAwareness from '../components/ProblemAwareness'
 import BeforeAfter from '../components/BeforeAfter'
@@ -16,11 +16,8 @@ import SectionHeader from '../components/SectionHeader'
 import BookingForm from '../components/BookingForm'
 import ContactForm from '../components/ContactForm'
 import ContactDetails from '../components/ContactDetails'
-import Button from '../components/Button'
-import { useQuote } from '../context/QuoteContext'
 
 export default function Home() {
-  const { openQuote } = useQuote()
 
   return (
     <>
@@ -45,45 +42,6 @@ export default function Home() {
               </div>
               <div style={{ maxWidth: '56rem', marginInline: 'auto' }}>
                 <BookingForm />
-              </div>
-            </div>
-          </Reveal>
-        </section>
-
-        <section className="section" id="pricing">
-          <Reveal>
-            <div className="price-band">
-              <div className="price-band-grid">
-                <div>
-                  <p className="eyebrow eyebrow-aqua">Pricing</p>
-                  <h2 className="headline" style={{ color: '#fff' }}>
-                    How Much Does Polytank Cleaning Cost?
-                  </h2>
-                  <p style={{ marginTop: '1rem', color: 'rgb(255 255 255 / 0.8)' }}>
-                    We confirm the price when you book. Every job is different, and the final amount can depend on:
-                  </p>
-                  <ul className="factor-list">
-                    {pricingFactors.map((item) => (
-                      <li key={item}>
-                        <span className="dot" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                  <Button variant="light" style={{ marginTop: '2rem' }} onClick={() => openQuote()}>
-                    Book a Cleaning
-                  </Button>
-                </div>
-                <div className="price-panel">
-                  <p className="eyebrow">Tell us about your tank</p>
-                  <p className="headline" style={{ fontSize: '1.5rem', marginTop: '0.5rem' }}>
-                    Share size, location and access
-                  </p>
-                  <p className="lede">We will confirm availability and your price before the visit.</p>
-                  <Button style={{ marginTop: '1.5rem' }} onClick={() => openQuote()}>
-                    Book a Cleaning
-                  </Button>
-                </div>
               </div>
             </div>
           </Reveal>
