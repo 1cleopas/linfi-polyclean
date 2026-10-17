@@ -1,5 +1,7 @@
 function pdfEscape(value) {
   return String(value ?? '')
+    .replace(/[–—·]/g, '-')
+    .replace(/…/g, '...')
     .replace(/[^\x20-\x7E]/g, ' ')
     .replace(/\\/g, '\\\\')
     .replace(/\(/g, '\\(')
@@ -143,53 +145,39 @@ function pdfBytes(objects) {
   return concat(parts)
 }
 
-export async function buildReceiptPdf({ number, date, paid, rows, amount, company, logoBytes }) {
+async function watermarkCommands(logoBytes) {
   let watermark = null
   try {
     watermark = await loadWatermark(logoBytes)
   } catch {
     watermark = null
   }
-
-  const commands = []
-  if (watermark) {
-    const drawW = 400
-    const drawH = drawW * (watermark.height / watermark.width)
-    const x = (595 - drawW) / 2
-    const y = (842 - drawH) / 2
-    commands.push(
-      `q /GS1 gs ${drawW.toFixed(2)} 0 0 ${drawH.toFixed(2)} ${x.toFixed(2)} ${y.toFixed(2)} cm /Im1 Do Q`,
-    )
+  if (!watermark) return { watermark, commands: [] }
+  const drawW = 400
+  const drawH = drawW * (watermark.height / watermark.width)
+  const x = (595 - drawW) / 2
+  const y = (842 - drawH) / 2
+  return {
+    watermark,
+    commands: [`q /GS1 gs ${drawW.toFixed(2)} 0 0 ${drawH.toFixed(2)} ${x.toFixed(2)} ${y.toFixed(2)} cm /Im1 Do Q`],
   }
-  commands.push(
+}
+
+function companyHeader(company, title, number, details) {
+  return [
     line(company.name, 20, 48, 780),
     line(company.tagline, 11, 48, 758, 'F2'),
     line(company.phone, 11, 48, 738, 'F2'),
     line(company.email, 11, 48, 722, 'F2'),
     line(company.serviceArea, 11, 48, 706, 'F2'),
-    line('RECEIPT', 12, 430, 780),
+    line(title, 12, 430, 780),
     line(number, 14, 430, 758),
-    line(date, 11, 430, 738, 'F2'),
-    line(paid ? 'PAID' : 'UNPAID', 12, 430, 716),
+    ...details.map(([text, font], index) => line(text, font === 'F1' ? 12 : 11, 430, 738 - index * 20, font)),
     '0.75 w 48 690 m 547 690 l S',
-  )
+  ]
+}
 
-  let textY = 660
-  for (const [label, value] of rows) {
-    commands.push(line(label, 11, 48, textY, 'F2'))
-    commands.push(line(value, 12, 220, textY))
-    textY -= 24
-  }
-
-  textY -= 12
-  commands.push(`0.75 w 48 ${textY} m 547 ${textY} l S`)
-  textY -= 28
-  commands.push(line('Amount', 12, 48, textY, 'F2'))
-  commands.push(line(amount, 18, 220, textY))
-  textY -= 40
-  commands.push(line('Prices may vary due to location and tank position.', 10, 48, textY, 'F2'))
-  commands.push(line('This receipt covers every tank booked for this customer.', 10, 48, textY - 16, 'F2'))
-
+function pageBlob(commands, watermark) {
   const resources = watermark
     ? '/Font << /F1 5 0 R /F2 6 0 R >> /XObject << /Im1 7 0 R >> /ExtGState << /GS1 9 0 R >>'
     : '/Font << /F1 5 0 R /F2 6 0 R >>'
@@ -225,4 +213,114 @@ export async function buildReceiptPdf({ number, date, paid, rows, amount, compan
   }
 
   return new Blob([pdfBytes(objects)], { type: 'application/pdf' })
+}
+
+function clip(value, max) {
+  const text = String(value ?? '')
+  return text.length > max ? `${text.slice(0, max - 3)}...` : text
+}
+
+function wrap(value, width) {
+  const words = String(value ?? '').split(/\s+/).filter(Boolean)
+  const lines = []
+  let current = ''
+  for (const word of words) {
+    if (current && (current + ' ' + word).length > width) {
+      lines.push(current)
+      current = word
+    } else {
+      current = current ? `${current} ${word}` : word
+    }
+  }
+  if (current) lines.push(current)
+  return lines
+}
+
+export async function buildReceiptPdf({ number, date, paid, rows, amount, company, logoBytes }) {
+  const { watermark, commands } = await watermarkCommands(logoBytes)
+  commands.push(...companyHeader(company, 'RECEIPT', number, [[date, 'F2'], [paid ? 'PAID' : 'UNPAID', 'F1']]))
+
+  let textY = 660
+  for (const [label, value] of rows) {
+    commands.push(line(label, 11, 48, textY, 'F2'))
+    commands.push(line(value, 12, 220, textY))
+    textY -= 24
+  }
+
+  textY -= 12
+  commands.push(`0.75 w 48 ${textY} m 547 ${textY} l S`)
+  textY -= 28
+  commands.push(line('Amount', 12, 48, textY, 'F2'))
+  commands.push(line(amount, 18, 220, textY))
+  textY -= 40
+  commands.push(line('Prices may vary due to location and tank position.', 10, 48, textY, 'F2'))
+  commands.push(line('This receipt covers every tank booked for this customer.', 10, 48, textY - 16, 'F2'))
+
+  return pageBlob(commands, watermark)
+}
+
+const MAX_INVOICE_LINES = 16
+
+export async function buildInvoicePdf({ number, issued, status, billTo, items, subtotal, discount, total, notes, company, logoBytes }) {
+  const { watermark, commands } = await watermarkCommands(logoBytes)
+  commands.push(...companyHeader(company, 'INVOICE', number, [[`Issued ${issued}`, 'F2'], [status.toUpperCase(), 'F1']]))
+
+  let textY = 662
+  commands.push(line('BILL TO', 10, 48, textY, 'F2'))
+  textY -= 18
+  commands.push(line(billTo.name, 13, 48, textY))
+  for (const detail of billTo.details.filter(Boolean)) {
+    textY -= 16
+    commands.push(line(detail, 11, 48, textY, 'F2'))
+  }
+
+  textY -= 32
+  commands.push(
+    line('Description', 10, 48, textY, 'F2'),
+    line('Qty', 10, 350, textY, 'F2'),
+    line('Unit price', 10, 395, textY, 'F2'),
+    line('Amount', 10, 480, textY, 'F2'),
+  )
+  textY -= 8
+  commands.push(`0.5 w 48 ${textY} m 547 ${textY} l S`)
+
+  const shown = items.slice(0, MAX_INVOICE_LINES)
+  for (const item of shown) {
+    textY -= 20
+    const [first = '-', ...rest] = wrap(item.description, 48)
+    commands.push(
+      line(first, 11, 48, textY),
+      line(item.quantity, 11, 350, textY, 'F2'),
+      line(item.unitPrice, 11, 395, textY, 'F2'),
+      line(item.amount, 11, 480, textY),
+    )
+    if (rest.length) {
+      textY -= 14
+      commands.push(line(clip(rest.join(' '), 52), 10, 48, textY, 'F2'))
+    }
+  }
+  if (items.length > shown.length) {
+    textY -= 18
+    commands.push(line(`+ ${items.length - shown.length} more line(s) - total below includes them`, 10, 48, textY, 'F2'))
+  }
+
+  textY -= 14
+  commands.push(`0.75 w 48 ${textY} m 547 ${textY} l S`)
+  if (discount) {
+    textY -= 20
+    commands.push(line('Subtotal', 11, 350, textY, 'F2'), line(subtotal, 11, 480, textY))
+    textY -= 18
+    commands.push(line('Discount', 11, 350, textY, 'F2'), line(`- ${discount}`, 11, 480, textY))
+  }
+  textY -= 30
+  commands.push(line('Total due', 12, 350, textY, 'F2'), line(total, 16, 480, textY))
+
+  textY -= 40
+  for (const noteLine of wrap(notes, 95).slice(0, 5)) {
+    commands.push(line(noteLine, 10, 48, textY, 'F2'))
+    textY -= 14
+  }
+  commands.push(line('Prices may vary due to location and tank position.', 10, 48, Math.min(textY - 6, 80), 'F2'))
+
+  return pageBlob(commands, watermark)
 }

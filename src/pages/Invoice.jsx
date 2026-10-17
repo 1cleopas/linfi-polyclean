@@ -3,10 +3,47 @@ import { Link, useParams } from 'react-router-dom'
 import { company } from '../data/content'
 import { getAdminToken, listAdminInvoices } from '../lib/api'
 import { invoiceStatusLabel, invoiceSubtotal, invoiceTotal, lineTotal } from '../lib/invoices'
+import { buildInvoicePdf } from '../lib/receiptPdf'
 import Button from '../components/Button'
 
 function formatCedis(amount) {
   return `GH₵${Number(amount || 0).toLocaleString('en-GH', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
+}
+
+function pdfCedis(amount) {
+  return formatCedis(amount).replace('GH₵', 'GHS ')
+}
+
+function whatsappDigits(phone) {
+  let raw = String(phone || '').replace(/\D/g, '')
+  if (raw.startsWith('00')) raw = raw.slice(2)
+  if (raw.startsWith('0')) return `233${raw.slice(1)}`
+  if (raw.length === 9) return `233${raw}`
+  return raw
+}
+
+export function invoicePdf(invoice) {
+  const discount = Number(invoice.discount) || 0
+  return buildInvoicePdf({
+    number: invoice.number,
+    issued: formatDate(invoice.issueDate),
+    status: invoiceStatusLabel(invoice.status),
+    billTo: {
+      name: invoice.customerName,
+      details: [invoice.phone, invoice.location, invoice.gpsAddress ? `GPS: ${invoice.gpsAddress}` : ''],
+    },
+    items: invoice.items.map((item) => ({
+      description: item.description,
+      quantity: String(item.quantity),
+      unitPrice: pdfCedis(item.unitPrice),
+      amount: pdfCedis(lineTotal(item)),
+    })),
+    subtotal: pdfCedis(invoiceSubtotal(invoice)),
+    discount: discount ? pdfCedis(discount) : '',
+    total: pdfCedis(invoiceTotal(invoice)),
+    notes: invoice.notes,
+    company,
+  })
 }
 
 function formatDate(value) {
@@ -22,6 +59,8 @@ export default function Invoice() {
   const { id } = useParams()
   const [invoice, setInvoice] = useState(null)
   const [error, setError] = useState('')
+  const [shareNote, setShareNote] = useState('')
+  const [sending, setSending] = useState(false)
 
   useEffect(() => {
     const meta = document.querySelector('meta[name="robots"]')
@@ -63,17 +102,60 @@ export default function Invoice() {
   }
 
   const discount = Number(invoice.discount) || 0
+  const digits = whatsappDigits(invoice.phone)
+
+  async function sendPdf() {
+    setShareNote('')
+    setSending(true)
+    try {
+      const filename = `${invoice.number}.pdf`
+      const blob = await invoicePdf(invoice)
+      const file = new File([blob], filename, { type: 'application/pdf' })
+      const caption = `Invoice ${invoice.number} for ${invoice.customerName} from ${company.name}: ${formatCedis(invoiceTotal(invoice))} due.`
+
+      if (navigator.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: filename, text: caption })
+          return
+        } catch (err) {
+          if (err?.name === 'AbortError') return
+        }
+      }
+
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = filename
+      link.click()
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+
+      if (digits) {
+        window.open(`https://wa.me/${digits}?text=${encodeURIComponent(caption)}`, '_blank', 'noopener,noreferrer')
+        setShareNote(`${filename} is in your Downloads. In the WhatsApp chat that opened, tap the paperclip, choose Document, and select that file.`)
+      } else {
+        setShareNote(`${filename} is in your Downloads. Add the customer's phone number to the invoice to open their WhatsApp chat directly.`)
+      }
+    } catch {
+      setShareNote('The PDF could not be created. Try again, or use Print or save PDF.')
+    } finally {
+      setSending(false)
+    }
+  }
 
   return (
     <main className="receipt-page">
       <div className="wrap" style={{ maxWidth: '46rem' }}>
         <div className="receipt-actions">
-          <Button type="button" onClick={() => window.print()}>
+          <Button variant="whatsapp" onClick={sendPdf} disabled={sending}>
+            {sending ? 'Preparing PDF…' : 'Send PDF to customer'}
+          </Button>
+          <Button type="button" variant="outline" onClick={() => window.print()}>
             Print or save PDF
           </Button>
           <Button variant="outline" to="/admin#invoices">
             Back to invoices
           </Button>
+          {shareNote && <p className="field-hint" style={{ width: '100%' }}>{shareNote}</p>}
         </div>
 
         <article className="receipt-card">

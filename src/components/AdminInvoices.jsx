@@ -47,6 +47,7 @@ function customerKey(job) {
 export default function AdminInvoices({ invoices = [], jobs = [], priceForSize, onInvoicesUpdated, onUnauthorized }) {
   const [error, setError] = useState('')
   const [form, setForm] = useState(null)
+  const [savedNote, setSavedNote] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const thisMonth = today().slice(0, 7)
 
@@ -80,6 +81,7 @@ export default function AdminInvoices({ invoices = [], jobs = [], priceForSize, 
   function closeForm() {
     setForm(null)
     setError('')
+    setSavedNote('')
   }
 
   function setItem(index, patch) {
@@ -113,9 +115,15 @@ export default function AdminInvoices({ invoices = [], jobs = [], priceForSize, 
     setError('')
     const payload = { ...form, items: form.items.filter((item) => item.description.trim() || Number(item.unitPrice)) }
     try {
-      if (form.id) await updateAdminInvoice(form.id, payload)
-      else await createAdminInvoice(payload)
-      closeForm()
+      if (form.id) {
+        await updateAdminInvoice(form.id, payload)
+        closeForm()
+      } else {
+        // Keep the new invoice open so it can be sent to the customer straight away.
+        const data = await createAdminInvoice(payload)
+        setForm(data.invoice)
+        setSavedNote(`${data.invoice.number} saved. Send it to the customer as a PDF.`)
+      }
       await onInvoicesUpdated?.()
     } catch (err) {
       if (err.status === 401) onUnauthorized?.()
@@ -196,7 +204,7 @@ export default function AdminInvoices({ invoices = [], jobs = [], priceForSize, 
               <th>Issued</th>
               <th>Status</th>
               <th className="right">Total</th>
-              <th className="right">View</th>
+              <th className="right">Send</th>
             </tr>
           </thead>
           <tbody>
@@ -221,7 +229,7 @@ export default function AdminInvoices({ invoices = [], jobs = [], priceForSize, 
                     onClick={(e) => e.stopPropagation()}
                   >
                     <ReceiptText className="icon-xs" aria-hidden="true" />
-                    Invoice
+                    Send PDF
                   </a>
                 </td>
               </tr>
@@ -396,6 +404,7 @@ export default function AdminInvoices({ invoices = [], jobs = [], priceForSize, 
               />
             </label>
 
+            {savedNote && <p className="field-hint" style={{ marginTop: '0.75rem', color: 'var(--color-secondary)', fontWeight: 600 }}>{savedNote}</p>}
             {error && <p className="field-error" style={{ marginTop: '0.75rem' }}>{error}</p>}
             <div className="admin-actions" style={{ marginTop: '1.5rem', flexWrap: 'wrap' }}>
               <Button type="submit">{form.id ? 'Save changes' : 'Save invoice'}</Button>
@@ -403,8 +412,8 @@ export default function AdminInvoices({ invoices = [], jobs = [], priceForSize, 
                 Close
               </Button>
               {form.id && (
-                <Button type="button" variant="outline" href={`/admin/invoice/${form.id}`} target="_blank">
-                  View invoice
+                <Button variant="whatsapp" href={`/admin/invoice/${form.id}`} target="_blank" rel="noreferrer">
+                  Send PDF to customer
                 </Button>
               )}
               {form.id && (
