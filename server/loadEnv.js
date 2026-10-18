@@ -5,7 +5,8 @@ import { fileURLToPath } from 'node:url'
 export const rootDir = fileURLToPath(new URL('..', import.meta.url))
 
 try {
-  for (const raw of readFileSync(join(rootDir, '.env'), 'utf8').split(/\r?\n/)) {
+  // Editors on Windows often save a byte-order mark, which would otherwise become part of the first key.
+  for (const raw of readFileSync(join(rootDir, '.env'), 'utf8').replace(/^﻿/, '').split(/\r?\n/)) {
     const line = raw.trim()
     if (!line || line.startsWith('#')) continue
     const cut = line.indexOf('=')
