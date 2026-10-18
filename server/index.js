@@ -7,6 +7,7 @@ import { countWeekBookings, createJob, createJobs, deleteJob, jobsFilePath, list
 import { initStorage } from './db.js'
 import { createWorker, deleteWorker, listWorkers, updateWorker, workersFilePath } from './workers.js'
 import { createInvoice, deleteInvoice, invoicesFilePath, listInvoices, updateInvoice } from './invoices.js'
+import { notificationStatus, notifyNewBooking, plannedConfirmations } from './notify.js'
 
 const app = express()
 const configuredPassword = String(process.env.ADMIN_PASSWORD || '').trim()
@@ -28,7 +29,7 @@ function clientIp(req) {
   return req.ip || req.socket?.remoteAddress || 'unknown'
 }
 
-const PUBLIC_BOOKING_FIELDS = ['fullName', 'phone', 'whatsapp', 'location', 'gpsAddress', 'service', 'tankType', 'tankSize', 'week', 'time', 'extra']
+const PUBLIC_BOOKING_FIELDS = ['fullName', 'phone', 'whatsapp', 'email', 'location', 'gpsAddress', 'service', 'tankType', 'tankSize', 'week', 'time', 'extra']
 
 function text(value, max = 500) {
   if (typeof value !== 'string' && typeof value !== 'number') return ''
@@ -120,6 +121,10 @@ app.post('/api/bookings', async (req, res) => {
     res.status(400).json({ error: 'Name, phone, location and preferred week are required.' })
     return
   }
+  if (body.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) {
+    res.status(400).json({ error: 'Enter a valid email or leave it blank.' })
+    return
+  }
 
   try {
     const requested = Number.parseInt(text(raw.tanks), 10)
@@ -141,10 +146,13 @@ app.post('/api/bookings', async (req, res) => {
       })),
     )
     console.log(`Booking saved: ${jobs[0].fullName} (${jobs.length} tank${jobs.length === 1 ? '' : 's'}, ${jobs[0].week})`)
+    // Sent in the background so a slow email or SMS service never holds up the customer.
+    notifyNewBooking(jobs, { via: 'on the website' })
     res.status(201).json({
       job: jobs[0],
       jobs,
       weekCount: countWeekBookings(jobs[0].week),
+      confirmations: plannedConfirmations(jobs[0]),
     })
   } catch (error) {
     if (error.code === 'INVALID') {
@@ -199,6 +207,7 @@ app.post('/api/integrations/google-form', async (req, res) => {
         fullName,
         phone,
         whatsapp: text(raw.whatsapp, 50),
+        email: text(raw.email, 200),
         location,
         gpsAddress,
         service: text(raw.service, 200),
@@ -214,6 +223,7 @@ app.post('/api/integrations/google-form', async (req, res) => {
       })),
     )
     console.log(`Google Form booking saved: ${fullName} (${jobs.length} tank${jobs.length === 1 ? '' : 's'}, ${jobs[0].week})`)
+    notifyNewBooking(jobs, { via: 'through the Google Form' })
     res.status(201).json({ jobs })
   } catch (error) {
     if (error.code === 'INVALID') {
@@ -393,4 +403,5 @@ app.listen(port, '0.0.0.0', () => {
   console.log(`Job file: ${jobsFilePath()}`)
   console.log(`Worker file: ${workersFilePath()}`)
   console.log(`Invoice file: ${invoicesFilePath()}`)
+  console.log(`Booking notifications: ${notificationStatus()}`)
 })

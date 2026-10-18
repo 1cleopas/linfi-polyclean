@@ -13,3 +13,16 @@ services:
       # Free Postgres connection string (for example from Neon). Without it, data is wiped on every restart.
       - key: DATABASE_URL
         sync: false
+      # Booking alerts and customer confirmations. See .env.example for what each one does.
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: ALERT_EMAILS
+        sync: false
+      - key: ARKESEL_API_KEY
+        sync: false
+      - key: SMS_SENDER_ID
+        sync: false
+      - key: ALERT_PHONES
+        sync: false

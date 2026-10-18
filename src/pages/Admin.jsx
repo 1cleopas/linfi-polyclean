@@ -32,6 +32,7 @@ const emptyJob = {
   fullName: '',
   phone: '',
   whatsapp: '',
+  email: '',
   location: '',
   gpsAddress: '',
   service: '',
@@ -629,6 +630,7 @@ export default function Admin() {
             <div className="modal-grid">
               <Field label="Name" value={adding ? draft.fullName : selected.fullName} onChange={(value) => (adding ? setDraft({ ...draft, fullName: value }) : setSelected({ ...selected, fullName: value }))} />
               <Field label="Phone" value={adding ? draft.phone : selected.phone} onChange={(value) => (adding ? setDraft({ ...draft, phone: value }) : setSelected({ ...selected, phone: value }))} />
+              <Field label="Email" type="email" value={adding ? draft.email : selected.email || ''} onChange={(value) => (adding ? setDraft({ ...draft, email: value }) : setSelected({ ...selected, email: value }))} />
               <Field label="Location" value={adding ? draft.location : selected.location} onChange={(value) => (adding ? setDraft({ ...draft, location: value }) : setSelected({ ...selected, location: value }))} />
               <Field label="GPS address" value={adding ? draft.gpsAddress : selected.gpsAddress || ''} onChange={(value) => (adding ? setDraft({ ...draft, gpsAddress: value }) : setSelected({ ...selected, gpsAddress: value }))} />
               <label className="field">

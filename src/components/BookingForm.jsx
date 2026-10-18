@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { CircleCheckBig } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { emailHref, hasWhatsApp, serviceOptions, tankSizes, tankTypes, tryOpenWhatsApp } from '../data/content'
+import { company, emailHref, hasWhatsApp, serviceOptions, tankSizes, tankTypes, tryOpenWhatsApp } from '../data/content'
 import { workWeeksForMonths, WORK_DAYS } from '../lib/weeks'
 import { createBooking } from '../lib/api'
 import { useQuote } from '../context/QuoteContext'
@@ -13,6 +13,7 @@ const empty = {
   fullName: '',
   phone: '',
   whatsapp: '',
+  email: '',
   location: '',
   gpsAddress: '',
   tankType: '',
@@ -54,6 +55,9 @@ function validate(values) {
   const errors = {}
   if (!values.fullName.trim() || values.fullName.trim().length < 2) errors.fullName = 'Please enter your full name.'
   if (!values.phone.trim() || values.phone.trim().length < 8) errors.phone = 'Enter a valid phone number.'
+  if (values.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) {
+    errors.email = 'Enter a valid email or leave this blank.'
+  }
   if (!values.location.trim()) errors.location = 'Tell us your location in Accra.'
   if (!values.week) errors.week = 'Choose a preferred week.'
   return errors
@@ -66,6 +70,7 @@ function bookingMessage(values) {
     `Name: ${values.fullName}`,
     `Phone: ${values.phone}`,
     `WhatsApp: ${values.whatsapp || values.phone}`,
+    values.email ? `Email: ${values.email}` : '',
     `Location: ${values.location}`,
     values.gpsAddress ? `GPS address: ${values.gpsAddress}` : '',
     values.service ? `Service: ${values.service}` : '',
@@ -82,6 +87,15 @@ function bookingMessage(values) {
   ]
     .filter(Boolean)
     .join('\n')
+}
+
+function confirmationNote(channels) {
+  const sms = channels.includes('sms')
+  const email = channels.includes('email')
+  if (sms && email) return ' A confirmation is on its way by SMS and email.'
+  if (sms) return ' A confirmation is on its way by SMS.'
+  if (email) return ' A confirmation is on its way by email.'
+  return ''
 }
 
 async function copyText(text) {
@@ -102,6 +116,7 @@ export default function BookingForm() {
   const [whatsappLink, setWhatsappLink] = useState(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
+  const [confirmations, setConfirmations] = useState([])
   const workWeeks = useMemo(() => workWeeksForMonths(3), [])
 
   useEffect(() => {
@@ -149,11 +164,13 @@ export default function BookingForm() {
 
     setSaving(true)
     setSaveError('')
+    let saved
     try {
-      await createBooking({
+      saved = await createBooking({
         fullName: values.fullName,
         phone: values.phone,
         whatsapp: values.whatsapp,
+        email: values.email.trim(),
         location: values.location,
         gpsAddress: values.gpsAddress,
         service: values.service,
@@ -173,6 +190,7 @@ export default function BookingForm() {
 
     const message = bookingMessage(values)
     const result = tryOpenWhatsApp(message)
+    setConfirmations(Array.isArray(saved?.confirmations) ? saved.confirmations : [])
     setWhatsappLink(result.url)
     setCopied(false)
     setSuccess(true)
@@ -188,16 +206,23 @@ export default function BookingForm() {
           Request received
         </h3>
         <p className="lede" style={{ maxWidth: '32rem', marginInline: 'auto' }}>
-          Thank you, {values.fullName.split(' ')[0] || 'there'}. Your booking has been saved for our team.
+          Thank you, {values.fullName.split(' ')[0] || 'there'}. Your booking has been saved and our team will call you to
+          confirm the day and time.
           {tankCount(values.tanks) > 1 ? ' Each tank was saved as its own booking.' : ''}
-          {hasWhatsApp()
-            ? ' If WhatsApp did not open, use the button below to send the same details.'
-            : ' Copy the request below and send it to LINFI POLYCLEAN.'}
+          {confirmationNote(confirmations)}
         </p>
         {whatsappLink && (
-          <Button href={whatsappLink} variant="whatsapp" style={{ marginTop: '2rem' }}>
-            Continue on WhatsApp
-          </Button>
+          <>
+            <p className="field-hint" style={{ marginTop: '1.5rem', fontWeight: 600 }}>
+              WhatsApp didn’t open? Tap below to send us your booking details.
+            </p>
+            <Button href={whatsappLink} variant="whatsapp" style={{ marginTop: '0.75rem' }}>
+              Continue on WhatsApp
+            </Button>
+          </>
+        )}
+        {!whatsappLink && (
+          <p className="field-hint" style={{ marginTop: '1.5rem' }}>Copy the request below and send it to {company.name}.</p>
         )}
         {!whatsappLink && (
           <Button
@@ -250,6 +275,12 @@ export default function BookingForm() {
       <label className="field">
         WhatsApp Number
         <input className="input" type="tel" name="whatsapp" value={values.whatsapp} onChange={onChange} autoComplete="tel" />
+      </label>
+      <label className="field">
+        Email
+        <input className="input" type="email" name="email" value={values.email} onChange={onChange} autoComplete="email" />
+        {errors.email && <span className="field-error">{errors.email}</span>}
+        <span className="field-hint">Optional. We will email you a copy of your booking.</span>
       </label>
       <label className="field">
         Location in Accra *

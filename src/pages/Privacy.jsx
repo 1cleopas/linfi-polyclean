@@ -18,7 +18,7 @@ const sections = [
     id: 'what-we-collect',
     title: 'What we collect',
     list: [
-      'Booking details you enter on our website or our Google Form: your name, phone number, WhatsApp number, location, GPS (digital) address, the service you want, tank type and size, number of tanks, preferred week and time, when the tank was last cleaned, and any extra notes.',
+      'Booking details you enter on our website or our Google Form: your name, phone number, WhatsApp number, email address (if you give one), location, GPS (digital) address, the service you want, tank type and size, number of tanks, preferred week and time, when the tank was last cleaned, and any extra notes.',
       'Job records we create when we work for you: the date of the job, the price, payment status, the technician assigned, and the invoices and receipts we issue to you.',
       'Messages you send us by WhatsApp, phone or email, including anything you write in our contact form. The contact form does not save your message on our website; it prepares a WhatsApp message or email that you choose to send.',    ],
   },
@@ -41,6 +41,7 @@ const sections = [
     list: [
       'Our staff and technicians, who need your name, phone number and address to do the job.',
       'WhatsApp (Meta), when you choose to contact us or send us your booking on WhatsApp.',
+      'Our SMS provider (Arkesel) and email provider (Resend), which deliver your booking confirmation and let our team know about your booking.',
       'Government authorities, if the law requires us to.',
     ],
     after:

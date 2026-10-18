@@ -35,7 +35,7 @@ export function countWeekBookings(week, exceptId) {
 
 
 const STATUSES = new Set(['new', 'confirmed', 'scheduled', 'done', 'paid', 'cancelled'])
-const EDITABLE_FIELDS = ['fullName', 'phone', 'whatsapp', 'location', 'gpsAddress', 'service', 'tankType', 'tankSize', 'tanks', 'week', 'time', 'extra', 'status', 'amount', 'notes', 'workerId']
+const EDITABLE_FIELDS = ['fullName', 'phone', 'whatsapp', 'email', 'location', 'gpsAddress', 'service', 'tankType', 'tankSize', 'tanks', 'week', 'time', 'extra', 'status', 'amount', 'notes', 'workerId']
 
 function text(value, max = 2000) {
   if (typeof value !== 'string' && typeof value !== 'number') return ''
@@ -76,6 +76,7 @@ function buildJob(input, now) {
     fullName,
     phone,
     whatsapp: text(input.whatsapp, 50),
+    email: text(input.email, 200),
     location: text(input.location, 200),
     gpsAddress: text(input.gpsAddress, 50).toUpperCase(),
     service: text(input.service, 200),
