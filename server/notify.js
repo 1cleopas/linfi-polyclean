@@ -104,11 +104,19 @@ async function sendSms({ to, message }) {
     console.log(`[dry run] SMS to ${recipients.join(', ')}: ${message}`)
     return
   }
-  await post(
+  const reply = await post(
     'https://sms.arkesel.com/api/v2/sms/send',
     { 'api-key': config.arkeselKey },
     { sender: config.smsSender, message, recipients, ...(config.smsSandbox ? { sandbox: true } : {}) },
   )
+  // Arkesel answers {"status":"success",...}; anything else is a failure even with an OK HTTP code.
+  let status = ''
+  try {
+    status = JSON.parse(reply).status
+  } catch {
+    // Not JSON: treated as a failure below.
+  }
+  if (status !== 'success') throw new Error(`Arkesel: ${reply.slice(0, 300)}`)
 }
 
 function firstName(fullName) {

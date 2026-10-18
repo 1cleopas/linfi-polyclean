@@ -24,12 +24,12 @@ export const company = {
 }
 
 /* Payment is by MTN MoMo only, once the job is finished.
-   Merchant name is spelled exactly as registered with MoMo. */
+   Merchant name as shown to customers when they pay by MoMo. */
 export const payment = {
   method: 'MTN Mobile Money (MoMoPay)',
   terms: 'Payment is made only after the work is done, by Mobile Money (MoMo) only.',
   merchantId: '925762',
-  merchantName: 'LINIFI POLYCLEAN ENTERPRISE',
+  merchantName: 'LINFI POLYCLEAN ENTERPRISE',
   qrImage: '/images/momo-qr.png',
   ussdSteps: ['Dial *170#', 'Select MoMoPay and enter Merchant ID 925762', 'Enter the amount and use your invoice or receipt number as the reference', 'Enter your PIN to confirm'],
   qrSteps: ['Open the MoMo app', "Tap 'Scan & Pay' and scan the QR code", 'Enter the amount and reference, then confirm'],
