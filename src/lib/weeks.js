@@ -82,7 +82,10 @@ export function workWeeksForMonths(months = 3) {
 const FORTNIGHT_EPOCH = atMidnight(new Date(2026, 0, 6))
 
 export function startOfFortnight(from = new Date()) {
-  const weekStart = startOfWorkWeek(from)
+  // A pay period runs Tuesday to Monday, so a Monday belongs to the week that started the Tuesday
+  // before it — not the next work week that startOfWorkWeek gives for bookings.
+  const day = atMidnight(from)
+  const weekStart = day.getDay() === 1 ? addDays(day, -6) : startOfWorkWeek(day)
   const days = Math.round((weekStart.getTime() - FORTNIGHT_EPOCH.getTime()) / 86400000)
   const offset = ((days % 14) + 14) % 14
   return addDays(weekStart, -offset)

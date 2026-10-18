@@ -324,10 +324,14 @@ export async function buildReceiptPdf({ number, date, paid, rows, amount, compan
   const qr = paid ? null : await paymentQr(payment, qrBytes)
   commands.push(...companyHeader(company, 'RECEIPT', number, [[date, 'F2'], [paid ? 'PAID' : 'UNPAID', 'F1']]))
 
+  // Keep the rows clear of the totals and payment section; a booking with many tanks would run off the page.
+  const floor = payment ? paymentTop(paid) : 60
+  const room = Math.max(1, Math.floor((660 - floor - 110) / 24) + 1)
+  const shownRows = rows.length > room ? [...rows.slice(0, room - 1), ['', `+ ${rows.length - room + 1} more line(s)`]] : rows
   let textY = 660
-  for (const [label, value] of rows) {
+  for (const [label, value] of shownRows) {
     commands.push(line(label, 11, 48, textY, 'F2'))
-    commands.push(line(value, 12, 220, textY))
+    commands.push(line(clip(value, 60), 12, 220, textY))
     textY -= 24
   }
 

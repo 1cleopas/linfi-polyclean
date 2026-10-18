@@ -58,6 +58,7 @@ function validate(invoice) {
   if (invoice.items.some((item) => item.quantity < 0 || item.unitPrice < 0)) {
     throw invalidError('Quantities and prices cannot be negative.')
   }
+  if (invoice.discount < 0) throw invalidError('Discount cannot be negative.')
   return invoice
 }
 

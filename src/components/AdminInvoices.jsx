@@ -6,10 +6,11 @@ import Button from './Button'
 
 const emptyItem = { description: '', quantity: 1, unitPrice: '' }
 
+// Local calendar date; toISOString would give the UTC date, which is a day off near midnight outside GMT.
 function today(offsetDays = 0) {
   const date = new Date()
   date.setDate(date.getDate() + offsetDays)
-  return date.toISOString().slice(0, 10)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
 function emptyInvoice() {

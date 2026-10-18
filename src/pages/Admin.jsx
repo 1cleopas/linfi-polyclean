@@ -328,6 +328,7 @@ export default function Admin() {
       setAdding(false)
       refresh().catch(() => {})
     } catch (err) {
+      if (err.status === 401) handleUnauthorized()
       setError(err.message)
     }
   }
@@ -341,6 +342,7 @@ export default function Admin() {
       if (selected?.id === id) setSelected(null)
       refresh().catch(() => {})
     } catch (err) {
+      if (err.status === 401) handleUnauthorized()
       setError(err.message)
     }
   }
@@ -517,7 +519,7 @@ export default function Admin() {
               if (e.target.value !== 'all') setCountWeek(e.target.value)
             }}
           >
-            <option value="all">All weeks (next 3 months)</option>
+            <option value="all">All weeks</option>
             {weekChoices.map((week) => (
               <option key={week.value} value={week.label}>
                 {week.label} ({weekCounts[week.label] || 0})
@@ -662,6 +664,7 @@ export default function Admin() {
                   onChange={(e) => (adding ? setDraft({ ...draft, service: e.target.value }) : setSelected({ ...selected, service: e.target.value }))}
                 >
                   <option value="">Select service</option>
+                  <CurrentOption value={adding ? draft.service : selected.service} known={services.map((item) => item.name)} />
                   {services.map((item) => (
                     <option key={item.id} value={item.name}>
                       {item.name}
@@ -704,6 +707,7 @@ export default function Admin() {
                   onChange={(e) => (adding ? setDraft({ ...draft, tankType: e.target.value }) : setSelected({ ...selected, tankType: e.target.value }))}
                 >
                   <option value="">Select type</option>
+                  <CurrentOption value={adding ? draft.tankType : selected.tankType} known={tankTypes} />
                   {tankTypes.map((item) => (
                     <option key={item} value={item}>
                       {item}
@@ -733,6 +737,13 @@ export default function Admin() {
                   onChange={(e) => (adding ? setDraft({ ...draft, workerId: e.target.value }) : setSelected({ ...selected, workerId: e.target.value }))}
                 >
                   <option value="">Unassigned</option>
+                  {(() => {
+                    const current = adding ? draft.workerId : selected.workerId
+                    if (current && !workers.some((worker) => worker.id === current)) {
+                      return <option value={current}>Removed worker</option>
+                    }
+                    return null
+                  })()}
                   {workers.map((worker) => (
                     <option key={worker.id} value={worker.id}>
                       {worker.fullName}
@@ -794,6 +805,12 @@ function Stat({ icon: Icon, label, value, note }) {
       <p className="field-hint">{note}</p>
     </div>
   )
+}
+
+// Keeps a saved value visible when it is not one of the fixed choices, for example a Google Form answer.
+function CurrentOption({ value, known }) {
+  if (!value || known.includes(value)) return null
+  return <option value={value}>{value}</option>
 }
 
 function Field({ label, value, onChange, type = 'text' }) {

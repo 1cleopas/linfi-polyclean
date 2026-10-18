@@ -150,7 +150,7 @@ export default function AdminSalaries({ jobs = [], workers = [], onWorkersUpdate
         </div>
       </div>
 
-      {error && <p className="field-error" style={{ marginTop: '1rem' }}>{error}</p>}
+      {error && !adding && !selected && <p className="field-error" style={{ marginTop: '1rem' }}>{error}</p>}
 
       <div className="job-table-wrap">
         <table className="job-table">

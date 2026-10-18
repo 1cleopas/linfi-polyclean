@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { company, payment } from '../data/content'
-import { getAdminToken, listAdminInvoices } from '../lib/api'
+import { getAdminToken, listAdminInvoices, setAdminToken } from '../lib/api'
 import { invoiceStatusLabel, invoiceSubtotal, invoiceTotal, lineTotal } from '../lib/invoices'
 import { buildInvoicePdf } from '../lib/receiptPdf'
 import Button from '../components/Button'
@@ -85,7 +85,14 @@ export default function Invoice() {
         if (!current) setError('Invoice not found.')
         else setInvoice(current)
       })
-      .catch((err) => setError(err.message))
+      .catch((err) => {
+        if (err.status === 401) {
+          setAdminToken('')
+          window.location.replace('/admin')
+          return
+        }
+        setError(err.message)
+      })
     return undefined
   }, [id])
 

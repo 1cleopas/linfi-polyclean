@@ -113,11 +113,13 @@ export function readList(name) {
 
 export async function writeList(name, list) {
   const previous = cache.get(name) || []
-  cache.set(name, structuredClone(list))
+  const next = structuredClone(list)
+  cache.set(name, next)
   try {
     await persist(name, list)
   } catch (error) {
-    cache.set(name, previous)
+    // Only roll back if no newer save has replaced this list in the meantime.
+    if (cache.get(name) === next) cache.set(name, previous)
     throw error
   }
 }

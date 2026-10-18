@@ -53,6 +53,7 @@ export default function Receipt() {
   const [jobs, setJobs] = useState(null)
   const [error, setError] = useState('')
   const [shareNote, setShareNote] = useState('')
+  const [sending, setSending] = useState(false)
 
   useEffect(() => {
     const meta = document.querySelector('meta[name="robots"]')
@@ -124,6 +125,17 @@ export default function Receipt() {
 
   async function sendPdf() {
     setShareNote('')
+    setSending(true)
+    try {
+      await sharePdf()
+    } catch {
+      setShareNote('The PDF could not be created. Try again, or use Print receipt.')
+    } finally {
+      setSending(false)
+    }
+  }
+
+  async function sharePdf() {
     const digits = whatsappDigits(job)
     const filename = `${number}.pdf`
     const blob = await buildReceiptPdf({
@@ -171,8 +183,8 @@ export default function Receipt() {
             Print receipt
           </Button>
           {whatsappDigits(job) && (
-            <Button variant="whatsapp" onClick={sendPdf}>
-              Send PDF on WhatsApp
+            <Button variant="whatsapp" onClick={sendPdf} disabled={sending}>
+              {sending ? 'Preparing PDF…' : 'Send PDF on WhatsApp'}
             </Button>
           )}
           {shareNote && <p className="field-hint" style={{ width: '100%' }}>{shareNote}</p>}
