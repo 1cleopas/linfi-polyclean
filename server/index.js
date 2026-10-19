@@ -7,7 +7,7 @@ import { countWeekBookings, createJob, createJobs, deleteJob, jobsFilePath, list
 import { initStorage } from './db.js'
 import { createWorker, deleteWorker, listWorkers, updateWorker, workersFilePath } from './workers.js'
 import { createInvoice, deleteInvoice, invoicesFilePath, listInvoices, updateInvoice } from './invoices.js'
-import { notificationStatus, notifyNewBooking, plannedConfirmations } from './notify.js'
+import { notificationStatus, notifyNewBooking } from './notify.js'
 
 const app = express()
 const configuredPassword = String(process.env.ADMIN_PASSWORD || '').trim()
@@ -115,6 +115,13 @@ app.post('/api/bookings', async (req, res) => {
     return
   }
   const raw = req.body && typeof req.body === 'object' ? req.body : {}
+  // Spam trap: people never see the "website" field, so anything in it came from a bot.
+  // Answer as if it worked so the bot learns nothing, but save and send nothing.
+  if (text(raw.website)) {
+    console.warn(`Booking spam trap triggered from ${clientIp(req)}`)
+    res.status(201).json({ job: null, jobs: [], weekCount: 0, confirmations: [] })
+    return
+  }
   // Only accept fields a customer is allowed to set. Price, notes, status and worker stay manager-only.
   const body = Object.fromEntries(PUBLIC_BOOKING_FIELDS.map((key) => [key, text(raw[key], key === 'extra' ? 2000 : 200)]))
   if (!body.fullName || !body.phone || !body.location || !body.week) {
@@ -147,12 +154,12 @@ app.post('/api/bookings', async (req, res) => {
     )
     console.log(`Booking saved: ${jobs[0].fullName} (${jobs.length} tank${jobs.length === 1 ? '' : 's'}, ${jobs[0].week})`)
     // Sent in the background so a slow email or SMS service never holds up the customer.
-    notifyNewBooking(jobs, { via: 'on the website' })
+    const confirmations = notifyNewBooking(jobs, { via: 'on the website' })
     res.status(201).json({
       job: jobs[0],
       jobs,
       weekCount: countWeekBookings(jobs[0].week),
-      confirmations: plannedConfirmations(jobs[0]),
+      confirmations,
     })
   } catch (error) {
     if (error.code === 'INVALID') {

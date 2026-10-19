@@ -117,6 +117,7 @@ export default function BookingForm() {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [confirmations, setConfirmations] = useState([])
+  const [trap, setTrap] = useState('')
   const workWeeks = useMemo(() => workWeeksForMonths(3), [])
 
   useEffect(() => {
@@ -181,6 +182,7 @@ export default function BookingForm() {
         week: values.week,
         time: values.time,
         extra: values.extra,
+        website: trap,
       })
     } catch (err) {
       setSaveError(err.message || 'The booking could not be saved. Please try again.')
@@ -262,6 +264,13 @@ export default function BookingForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="form-grid">
+      {/* Spam trap: hidden from people, but bots fill it in. The server ignores any booking that has it. */}
+      <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', width: '1px', height: '1px', overflow: 'hidden' }}>
+        <label>
+          Website
+          <input name="website" tabIndex={-1} autoComplete="off" value={trap} onChange={(e) => setTrap(e.target.value)} />
+        </label>
+      </div>
       <label className="field">
         Full Name *
         <input className="input" name="fullName" value={values.fullName} onChange={onChange} autoComplete="name" />

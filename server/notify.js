@@ -32,6 +32,31 @@ const config = {
   alertPhones: list('ALERT_PHONES'),
   confirmCustomers: env('CUSTOMER_CONFIRMATIONS').toLowerCase() !== 'off',
   dryRun: env('NOTIFY_DRY_RUN') === '1',
+  // Limits so the public booking form cannot be used to send messages to strangers or drain SMS credit.
+  customerDailyLimit: Number(env('CUSTOMER_CONFIRMATIONS_PER_DAY')) || 100,
+  alertDailyLimit: Number(env('ALERTS_PER_DAY')) || 100,
+  perRecipientDailyLimit: 3,
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000
+const sentLog = new Map()
+
+/** Records a send under `key` and says whether it stays within `max` in the last 24 hours. */
+function allowSend(key, max) {
+  const now = Date.now()
+  const recent = (sentLog.get(key) || []).filter((time) => now - time < DAY_MS)
+  if (recent.length >= max) {
+    sentLog.set(key, recent)
+    return false
+  }
+  recent.push(now)
+  sentLog.set(key, recent)
+  if (sentLog.size > 5000) {
+    for (const [item, times] of sentLog) {
+      if (!times.some((time) => now - time < DAY_MS)) sentLog.delete(item)
+    }
+  }
+  return true
 }
 
 const emailReady = () => config.dryRun || Boolean(config.resendKey && config.emailFrom)
@@ -54,6 +79,12 @@ export function ghanaPhone(value) {
   if (digits.startsWith('0')) digits = `233${digits.slice(1)}`
   else if (digits.length === 9) digits = `233${digits}`
   return digits.length >= 11 && digits.length <= 15 ? digits : ''
+}
+
+/** Only Ghana mobile numbers get customer SMS, so the form cannot run up costs on foreign numbers. */
+function ghanaMobile(value) {
+  const digits = ghanaPhone(value)
+  return /^233[235]\d{8}$/.test(digits) ? digits : ''
 }
 
 function validEmail(value) {
@@ -149,6 +180,10 @@ function bookingLines(jobs) {
 }
 
 function managerAlerts(jobs, via) {
+  if (!allowSend('alerts', config.alertDailyLimit)) {
+    console.warn(`Booking alerts skipped: more than ${config.alertDailyLimit} bookings in 24 hours. Check the dashboard for spam.`)
+    return []
+  }
   const lead = jobs[0]
   const tanks = `${jobs.length} tank${jobs.length === 1 ? '' : 's'}`
   return [
@@ -165,18 +200,31 @@ function managerAlerts(jobs, via) {
   ]
 }
 
-function customerConfirmations(jobs) {
-  if (!config.confirmCustomers) return []
+/** Decides which confirmations this customer gets, applying the per-recipient and daily limits. */
+function confirmationChannels(lead) {
+  if (!config.confirmCustomers || !lead) return { sms: '', email: '' }
+  const phone = smsReady() ? ghanaMobile(lead.phone) : ''
+  const email = emailReady() && validEmail(lead.email) ? String(lead.email).trim().toLowerCase() : ''
+  const sms = phone && allowSend(`sms:${phone}`, config.perRecipientDailyLimit) ? phone : ''
+  const mail = email && allowSend(`email:${email}`, config.perRecipientDailyLimit) ? email : ''
+  if ((sms || mail) && !allowSend('confirmations', config.customerDailyLimit)) {
+    console.warn(`Customer confirmations skipped: more than ${config.customerDailyLimit} in 24 hours.`)
+    return { sms: '', email: '' }
+  }
+  return { sms, email: mail }
+}
+
+function customerConfirmations(jobs, channels) {
   const lead = jobs[0]
   const tanks = `${jobs.length} tank${jobs.length === 1 ? '' : 's'}`
   const week = weekStart(lead.week)
   return [
-    sendSms({
-      to: lead.phone,
+    channels.sms && sendSms({
+      to: channels.sms,
       message: `Hi ${firstName(lead.fullName)}, ${company.name} has received your booking for ${tanks}${week ? `, week of ${week}` : ''}. We will call you to confirm the day and time. Questions? Call ${company.phone}.`,
     }),
-    sendEmail({
-      to: lead.email,
+    channels.email && sendEmail({
+      to: channels.email,
       subject: `We received your booking — ${company.name}`,
       text: [
         `Hi ${firstName(lead.fullName)},`,
@@ -195,23 +243,28 @@ function customerConfirmations(jobs) {
       ].join('\n'),
       replyTo: company.email,
     }),
-  ]
-}
-
-/** Which confirmations the customer should expect, so the website only promises what is sent. */
-export function plannedConfirmations(lead) {
-  if (!config.confirmCustomers || !lead) return []
-  return [
-    smsReady() && ghanaPhone(lead.phone) ? 'sms' : '',
-    emailReady() && validEmail(lead.email) ? 'email' : '',
   ].filter(Boolean)
 }
 
-/** Sends every alert and confirmation for one booking. Never throws. */
-export async function notifyNewBooking(jobs, { via = 'on the website' } = {}) {
-  if (!jobs?.length) return
-  const results = await Promise.allSettled([...managerAlerts(jobs, via), ...customerConfirmations(jobs)])
-  for (const result of results) {
-    if (result.status === 'rejected') console.error(`Booking notification failed: ${result.reason?.message || result.reason}`)
+/**
+  Starts every alert and confirmation for one booking in the background and returns at once with
+  the confirmations the customer should expect (['sms', 'email']), so the website only promises
+  what is actually sent. Never throws, and a failed send never affects the saved booking.
+*/
+export function notifyNewBooking(jobs, { via = 'on the website' } = {}) {
+  if (!jobs?.length) return []
+  try {
+    const channels = confirmationChannels(jobs[0])
+    Promise.allSettled([...managerAlerts(jobs, via), ...customerConfirmations(jobs, channels)])
+      .then((results) => {
+        for (const result of results) {
+          if (result.status === 'rejected') console.error(`Booking notification failed: ${result.reason?.message || result.reason}`)
+        }
+      })
+      .catch((error) => console.error(`Booking notification failed: ${error?.message || error}`))
+    return [channels.sms ? 'sms' : '', channels.email ? 'email' : ''].filter(Boolean)
+  } catch (error) {
+    console.error(`Booking notification failed: ${error?.message || error}`)
+    return []
   }
 }
