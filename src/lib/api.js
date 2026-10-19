@@ -106,3 +106,7 @@ export function updateAdminInvoice(id, payload) {
 export function deleteAdminInvoice(id) {
   return request(`/api/admin/invoices/${id}`, { method: 'DELETE', auth: true })
 }
+
+export function clearAdminData() {
+  return request('/api/admin/data', { method: 'DELETE', auth: true, body: { confirm: 'CLEAR' } })
+}

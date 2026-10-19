@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs'
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import { join } from 'node:path'
 import { countWeekBookings, createJob, createJobs, deleteJob, jobsFilePath, listJobs, replaceAllJobs, updateJob } from './store.js'
-import { initStorage } from './db.js'
+import { initStorage, writeList } from './db.js'
 import { createWorker, deleteWorker, listWorkers, updateWorker, workersFilePath } from './workers.js'
 import { createInvoice, deleteInvoice, invoicesFilePath, listInvoices, updateInvoice } from './invoices.js'
 import { notificationStatus, notifyNewBooking } from './notify.js'
@@ -381,6 +381,18 @@ app.delete('/api/admin/invoices/:id', requireAdmin, async (req, res) => {
     res.status(404).json({ error: 'Invoice not found.' })
     return
   }
+  res.status(204).end()
+})
+
+// Wipes every job, worker and invoice. The dashboard asks the manager to type CLEAR first.
+app.delete('/api/admin/data', requireAdmin, async (req, res) => {
+  if (req.body?.confirm !== 'CLEAR') {
+    res.status(400).json({ error: 'Type CLEAR to confirm.' })
+    return
+  }
+  await writeList('jobs', [])
+  await writeList('workers', [])
+  await writeList('invoices', [])
   res.status(204).end()
 })
 

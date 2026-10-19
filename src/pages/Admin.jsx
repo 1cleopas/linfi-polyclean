@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { CalendarDays, CircleDollarSign, ClipboardList, Eye, EyeOff, FileText, LogOut, Plus, ReceiptText, Search, Users } from 'lucide-react'
+import { CalendarDays, CircleDollarSign, ClipboardList, Eye, EyeOff, FileText, LogOut, Plus, ReceiptText, Search, Trash2, Users } from 'lucide-react'
 import { services, tankSizes, tankTypes } from '../data/content'
 import { firstCleaningDate, nextCleaningDate, workWeeksForMonths } from '../lib/weeks'
 import { jobWorkDate } from '../lib/commission'
 import {
   adminLogin,
+  clearAdminData,
   createAdminJob,
   deleteAdminJob,
   getAdminToken,
@@ -371,6 +372,30 @@ export default function Admin() {
     }
   }
 
+  async function clearAllData() {
+    const typed = window.prompt(
+      'This deletes every job, worker and invoice, and cannot be undone. Type CLEAR to continue.',
+    )
+    if (typed === null) return
+    if (typed.trim().toUpperCase() !== 'CLEAR') {
+      window.alert('Nothing was deleted. Type CLEAR exactly to confirm.')
+      return
+    }
+    setError('')
+    try {
+      await clearAdminData()
+      setJobs([])
+      setWorkers([])
+      setInvoices([])
+      setSelected(null)
+      refresh().catch(() => {})
+      window.alert('All jobs, workers and invoices were deleted.')
+    } catch (err) {
+      if (err.status === 401) handleUnauthorized()
+      window.alert(err.message)
+    }
+  }
+
   if (!tokenReady) {
     return (
       <main className="admin-login">
@@ -444,6 +469,10 @@ export default function Admin() {
           >
             <LogOut className="icon-sm" aria-hidden="true" />
             Sign out
+          </button>
+          <button type="button" className="admin-side-link admin-side-danger" onClick={clearAllData}>
+            <Trash2 className="icon-sm" aria-hidden="true" />
+            Clear all data
           </button>
         </aside>
 

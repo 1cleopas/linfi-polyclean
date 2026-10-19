@@ -2347,6 +2347,10 @@ h4,
   color: var(--color-muted);
 }
 
+.admin-side-danger {
+  color: #b42318;
+}
+
 .invoice-modal {
   max-width: 48rem;
 }
