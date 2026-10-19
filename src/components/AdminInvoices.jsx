@@ -13,6 +13,13 @@ function today(offsetDays = 0) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
+// Month of a saved timestamp in local time, e.g. "2026-10", to compare with today().
+function localMonth(timestamp) {
+  const date = new Date(timestamp || '')
+  if (Number.isNaN(date.getTime())) return ''
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
 function emptyInvoice() {
   return {
     number: '',
@@ -71,7 +78,8 @@ export default function AdminInvoices({ invoices = [], jobs = [], priceForSize, 
     .filter((invoice) => invoice.status === 'sent')
     .reduce((sum, invoice) => sum + invoiceTotal(invoice), 0)
   const paidThisMonth = invoices
-    .filter((invoice) => invoice.status === 'paid' && String(invoice.updatedAt || '').slice(0, 7) === thisMonth)
+    // Older invoices marked paid before paidAt existed fall back to their last edit.
+    .filter((invoice) => invoice.status === 'paid' && localMonth(invoice.paidAt || invoice.updatedAt) === thisMonth)
     .reduce((sum, invoice) => sum + invoiceTotal(invoice), 0)
   const draftCount = invoices.filter((invoice) => invoice.status === 'draft').length
 

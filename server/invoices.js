@@ -50,7 +50,14 @@ function normalizeInvoice(invoice) {
     discount: parseMoney(invoice.discount),
     notes: String(invoice.notes || '').trim(),
     jobIds: Array.isArray(invoice.jobIds) ? invoice.jobIds.map(String) : [],
+    paidAt: invoice.status === 'paid' ? String(invoice.paidAt || '') : '',
   }
+}
+
+// Remembers when an invoice was first marked paid, so later edits don't move it to another month.
+function withPaidAt(invoice, previous, now) {
+  if (invoice.status !== 'paid') return { ...invoice, paidAt: '' }
+  return { ...invoice, paidAt: previous?.status === 'paid' && previous.paidAt ? previous.paidAt : invoice.paidAt || now }
 }
 
 function validate(invoice) {
@@ -84,15 +91,20 @@ export function listInvoices() {
 export async function createInvoice(input) {
   const existing = readInvoices()
   const now = new Date().toISOString()
-  const invoice = validate(
-    normalizeInvoice({
-      ...input,
-      id: crypto.randomUUID(),
-      number: String(input.number || '').trim() || nextNumber(existing, now),
-      createdAt: now,
-      updatedAt: now,
-      issueDate: input.issueDate || now.slice(0, 10),
-    }),
+  const invoice = withPaidAt(
+    validate(
+      normalizeInvoice({
+        ...input,
+        id: crypto.randomUUID(),
+        number: String(input.number || '').trim() || nextNumber(existing, now),
+        createdAt: now,
+        updatedAt: now,
+        issueDate: input.issueDate || now.slice(0, 10),
+        paidAt: '',
+      }),
+    ),
+    null,
+    now,
   )
   if (existing.some((item) => item.number === invoice.number)) {
     throw invalidError('That invoice number is already used.')
@@ -107,15 +119,21 @@ export async function updateInvoice(id, patch) {
   if (index === -1) return null
 
   const current = invoices[index]
-  const next = validate(
-    normalizeInvoice({
-      ...current,
-      ...patch,
-      id: current.id,
-      createdAt: current.createdAt,
-      updatedAt: new Date().toISOString(),
-      number: String(patch.number ?? current.number).trim() || current.number,
-    }),
+  const now = new Date().toISOString()
+  const next = withPaidAt(
+    validate(
+      normalizeInvoice({
+        ...current,
+        ...patch,
+        id: current.id,
+        createdAt: current.createdAt,
+        updatedAt: now,
+        number: String(patch.number ?? current.number).trim() || current.number,
+        paidAt: current.paidAt,
+      }),
+    ),
+    current,
+    now,
   )
   if (invoices.some((item) => item.id !== id && item.number === next.number)) {
     throw invalidError('That invoice number is already used.')
