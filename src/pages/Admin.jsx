@@ -162,6 +162,29 @@ export default function Admin() {
     return () => meta.setAttribute('content', previous || 'index, follow')
   }, [])
 
+  // Let the manager install this page as its own home-screen app.
+  useEffect(() => {
+    const added = [
+      ['link', { rel: 'manifest', href: '/manager.webmanifest' }],
+      ['meta', { name: 'mobile-web-app-capable', content: 'yes' }],
+      ['meta', { name: 'apple-mobile-web-app-capable', content: 'yes' }],
+      ['meta', { name: 'apple-mobile-web-app-title', content: 'LINFI Manager' }],
+      ['meta', { name: 'apple-mobile-web-app-status-bar-style', content: 'default' }],
+    ].map(([tag, attrs]) => {
+      const el = document.createElement(tag)
+      Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, value))
+      document.head.appendChild(el)
+      return el
+    })
+    const touchIcon = document.querySelector('link[rel="apple-touch-icon"]')
+    const previousIcon = touchIcon?.getAttribute('href')
+    touchIcon?.setAttribute('href', '/manager-icon-192.png')
+    return () => {
+      added.forEach((el) => el.remove())
+      if (touchIcon && previousIcon) touchIcon.setAttribute('href', previousIcon)
+    }
+  }, [])
+
   useEffect(() => {
     if (tokenReady) return undefined
     wakeAdminApi()
