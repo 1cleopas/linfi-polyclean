@@ -103,7 +103,8 @@ export default function Navbar() {
         </div>
       </div>
 
-      <div id="mobile-nav" className={`mobile-nav ${open ? 'is-open' : ''}`} aria-hidden={!open}>
+      {/* inert keeps the closed menu's links out of the keyboard tab order, not just hidden from screen readers. */}
+      <div id="mobile-nav" className={`mobile-nav ${open ? 'is-open' : ''}`} aria-hidden={!open} inert={!open}>
         <nav className="mobile-nav-inner" aria-label="Mobile">
           {navLinks.map((link) => (
             <Link
