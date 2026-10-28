@@ -8,6 +8,7 @@ import { initStorage, writeList } from './db.js'
 import { createWorker, deleteWorker, listWorkers, updateWorker, workersFilePath } from './workers.js'
 import { createInvoice, deleteInvoice, invoicesFilePath, listInvoices, updateInvoice } from './invoices.js'
 import { notificationStatus, notifyNewBooking } from './notify.js'
+import { clearLoginFailures, loginBlocked, recordLoginFailure } from './loginGuard.js'
 
 const app = express()
 const configuredPassword = String(process.env.ADMIN_PASSWORD || '').trim()
@@ -21,7 +22,9 @@ if (!configuredPassword) {
       : 'ADMIN_PASSWORD is not set. Using the local development password.',
   )
 }
-const SESSION_MS = 1000 * 60 * 60 * 24 * 14
+// Manager sign-ins last 3 days. Raising SESSION_VERSION signs every device out once.
+const SESSION_MS = 1000 * 60 * 60 * 24 * 3
+const SESSION_VERSION = 5
 const buckets = new Map()
 
 function clientIp(req) {
@@ -60,7 +63,7 @@ function passwordMatches(given, expected) {
 
 function signSession() {
   if (!adminPassword) throw new Error('Manager sign-in is not configured.')
-  const payload = Buffer.from(JSON.stringify({ exp: Date.now() + SESSION_MS, v: 4 })).toString('base64url')
+  const payload = Buffer.from(JSON.stringify({ exp: Date.now() + SESSION_MS, v: SESSION_VERSION })).toString('base64url')
   const sig = createHmac('sha256', adminPassword).update(payload).digest('base64url')
   return `${payload}.${sig}`
 }
@@ -76,7 +79,7 @@ function hasValidSession(token) {
   if (left.length !== right.length || !timingSafeEqual(left, right)) return false
   try {
     const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'))
-    return data.v === 4 && typeof data.exp === 'number' && data.exp > Date.now()
+    return data.v === SESSION_VERSION && typeof data.exp === 'number' && data.exp > Date.now()
   } catch {
     return false
   }
@@ -84,8 +87,41 @@ function hasValidSession(token) {
 
 const port = Number(process.env.PORT) || 3000
 
+// Tells browsers to load scripts, styles and frames only from this site and the few Google
+// services it uses, so injected code cannot run or send a signed-in manager's data elsewhere.
+const contentPolicy = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com",
+  "img-src 'self' data: blob:",
+  "media-src 'self' blob:",
+  'frame-src https://maps.google.com https://www.google.com',
+  "connect-src 'self'",
+  "manifest-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  ...(onHost ? ['upgrade-insecure-requests'] : []),
+].join('; ')
+
 app.disable('x-powered-by')
 app.set('trust proxy', 1)
+app.use((req, res, next) => {
+  res.set({
+    'Content-Security-Policy': contentPolicy,
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()',
+    'Cross-Origin-Opener-Policy': 'same-origin',
+  })
+  if (onHost) res.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+  // Manager data should never be kept by the browser or a proxy cache.
+  if (req.path.startsWith('/api/admin')) res.set('Cache-Control', 'no-store')
+  next()
+})
 app.use(express.json({ limit: '200kb' }))
 app.use((error, _req, res, next) => {
   if (error instanceof SyntaxError) {
@@ -241,20 +277,24 @@ app.post('/api/integrations/google-form', async (req, res) => {
   }
 })
 
-app.post('/api/admin/login', (req, res) => {
+app.post('/api/admin/login', async (req, res) => {
   const ip = clientIp(req)
   if (!adminPassword) {
     res.status(503).json({ error: 'Manager sign-in is not set up yet. Add ADMIN_PASSWORD in the hosting settings.' })
     return
   }
+  // Checked before the password, so a locked-out guesser cannot tell when a guess was right.
+  if (loginBlocked(ip)) {
+    res.status(429).json({ error: 'Too many sign-in attempts. Wait 15 to 60 minutes and try again.' })
+    return
+  }
   if (!passwordMatches(String(req.body?.password || '').trim(), adminPassword)) {
-    if (tooMany(`login:${ip}`, { max: 8, windowMs: 15 * 60 * 1000 })) {
-      res.status(429).json({ error: 'Too many sign-in attempts. Wait a few minutes and try again.' })
-      return
-    }
+    await recordLoginFailure(ip)
+    console.warn(`Wrong manager password from ${ip}`)
     res.status(401).json({ error: 'Wrong password.' })
     return
   }
+  await clearLoginFailures(ip)
   res.json({ token: signSession() })
 })
 

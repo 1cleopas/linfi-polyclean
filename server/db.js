@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url'
 const rootDir = fileURLToPath(new URL('..', import.meta.url))
 const dataDir = process.env.DATA_DIR || join(rootDir, 'data')
 const databaseUrl = String(process.env.DATABASE_URL || '').trim()
-const NAMES = ['jobs', 'workers', 'invoices']
+const NAMES = ['jobs', 'workers', 'invoices', 'loginFailures']
 
 const cache = new Map()
 let pool = null
