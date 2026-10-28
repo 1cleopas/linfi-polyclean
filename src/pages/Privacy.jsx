@@ -3,7 +3,7 @@ import { company, emailHref, images, phoneHref } from '../data/content'
 import PageHero from '../components/PageHero'
 import Seo from '../components/Seo'
 
-const LAST_UPDATED = '17 October 2026'
+const LAST_UPDATED = '28 October 2026'
 
 const sections = [
   {
@@ -41,11 +41,13 @@ const sections = [
     list: [
       'Our staff and technicians, who need your name, phone number and address to do the job.',
       'WhatsApp (Meta), when you choose to contact us or send us your booking on WhatsApp.',
+      'Google, which stores the answers you give if you book through our Google Form.',
       'Our SMS provider (Arkesel) and email provider (Resend), which deliver your booking confirmation and let our team know about your booking.',
+      'The companies that host and protect our website and booking records (Render, our database provider, and Cloudflare).',
       'Government authorities, if the law requires us to.',
     ],
     after:
-      'Because our website is hosted outside Ghana, your booking information is stored and processed in the European Union. We use providers that apply strong security and data protection standards.',
+      'Some of these providers are based outside Ghana, so your information may be stored or processed in other countries, mainly in the European Union and the United States. We choose providers that apply strong security and data protection standards.',
   },
   {
     id: 'cookies',

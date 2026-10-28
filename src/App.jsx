@@ -6,6 +6,7 @@ import Services from './pages/Services'
 import About from './pages/About'
 import Contact from './pages/Contact'
 import Privacy from './pages/Privacy'
+import Terms from './pages/Terms'
 import Admin from './pages/Admin'
 import Receipt from './pages/Receipt'
 import Invoice from './pages/Invoice'
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="/pricing" element={<Navigate to="/" replace />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

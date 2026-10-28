@@ -416,7 +416,8 @@ export default function BookingForm() {
             : 'Submit the form to prepare your request. Add a WhatsApp number in the site contact details before publishing.'}
         </p>
         <p className="field-hint form-privacy-note" style={{ textAlign: 'center', marginTop: '0.5rem' }}>
-          We use your details only to arrange your cleaning. See our <Link to="/privacy">Privacy Policy</Link>.
+          By booking, you agree to our <Link to="/terms">Terms of Service</Link>. We use your details only to arrange your
+          cleaning. See our <Link to="/privacy">Privacy Policy</Link>.
         </p>
       </div>
     </form>
