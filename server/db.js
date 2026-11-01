@@ -68,6 +68,15 @@ export async function initStorage() {
     connectionString: databaseUrl,
     ssl: local ? false : { rejectUnauthorized: false },
     max: 3,
+    // Hosted databases such as Neon drop idle connections and can be slow to wake, so fail
+    // fast instead of leaving a request waiting forever.
+    connectionTimeoutMillis: 15000,
+    idleTimeoutMillis: 60000,
+    query_timeout: 20000,
+  })
+  // Without this listener a dropped idle connection is an unhandled 'error' event and stops the server.
+  pool.on('error', (error) => {
+    console.error('Database connection error:', error.message)
   })
   await pool.query(`
     CREATE TABLE IF NOT EXISTS app_data (
