@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { CalendarDays, CircleDollarSign, ClipboardList, Eye, EyeOff, FileText, LogOut, Plus, ReceiptText, Search, Trash2, Users } from 'lucide-react'
+import { CalendarDays, CircleDollarSign, ClipboardList, Eye, EyeOff, FileText, LogOut, Plus, ReceiptText, Search, Trash2, Users, Wallet } from 'lucide-react'
 import { services, tankSizes, tankTypes } from '../data/content'
 import { firstCleaningDate, nextCleaningDate, workWeeksForMonths } from '../lib/weeks'
 import { jobWorkDate } from '../lib/commission'
@@ -9,6 +9,7 @@ import {
   createAdminJob,
   deleteAdminJob,
   getAdminToken,
+  listAdminExpenses,
   listAdminInvoices,
   listAdminJobs,
   listAdminWorkers,
@@ -16,6 +17,7 @@ import {
   updateAdminJob,
   wakeAdminApi,
 } from '../lib/api'
+import AdminExpenses from '../components/AdminExpenses'
 import AdminInvoices from '../components/AdminInvoices'
 import AdminSalaries from '../components/AdminSalaries'
 import Button from '../components/Button'
@@ -120,6 +122,7 @@ const VIEWS = [
   { value: 'jobs', label: 'Jobs & bookings', icon: ClipboardList },
   { value: 'invoices', label: 'Invoices', icon: FileText },
   { value: 'salaries', label: 'Salaries', icon: Users },
+  { value: 'expenses', label: 'Expenses', icon: Wallet },
 ]
 
 function viewFromHash() {
@@ -135,6 +138,7 @@ export default function Admin() {
   const [jobs, setJobs] = useState([])
   const [workers, setWorkers] = useState([])
   const [invoices, setInvoices] = useState([])
+  const [expenses, setExpenses] = useState([])
   const [view, setView] = useState(viewFromHash)
   const [error, setError] = useState('')
   const [loadError, setLoadError] = useState('')
@@ -207,11 +211,17 @@ export default function Admin() {
   async function refresh() {
     const seq = ++requestSeq.current
     try {
-      const [jobData, workerData, invoiceData] = await Promise.all([listAdminJobs(), listAdminWorkers(), listAdminInvoices()])
+      const [jobData, workerData, invoiceData, expenseData] = await Promise.all([
+        listAdminJobs(),
+        listAdminWorkers(),
+        listAdminInvoices(),
+        listAdminExpenses(),
+      ])
       if (seq !== requestSeq.current) return
       setJobs(jobData.jobs || [])
       setWorkers(workerData.workers || [])
       setInvoices(invoiceData.invoices || [])
+      setExpenses(expenseData.expenses || [])
       setLoadError('')
     } catch (err) {
       if (seq !== requestSeq.current) return
@@ -374,7 +384,7 @@ export default function Admin() {
 
   async function clearAllData() {
     const typed = window.prompt(
-      'This deletes every job, worker and invoice, and cannot be undone. Type CLEAR to continue.',
+      'This deletes every job, worker, invoice and expense, and cannot be undone. Type CLEAR to continue.',
     )
     if (typed === null) return
     if (typed.trim().toUpperCase() !== 'CLEAR') {
@@ -387,9 +397,10 @@ export default function Admin() {
       setJobs([])
       setWorkers([])
       setInvoices([])
+      setExpenses([])
       setSelected(null)
       refresh().catch(() => {})
-      window.alert('All jobs, workers and invoices were deleted.')
+      window.alert('All jobs, workers, invoices and expenses were deleted.')
     } catch (err) {
       if (err.status === 401) handleUnauthorized()
       window.alert(err.message)
@@ -507,6 +518,15 @@ export default function Admin() {
             jobs={jobs}
             workers={workers}
             onWorkersUpdated={refresh}
+            onUnauthorized={handleUnauthorized}
+          />
+        )}
+
+        {view === 'expenses' && (
+          <AdminExpenses
+            expenses={expenses}
+            jobs={jobs}
+            onExpensesUpdated={refresh}
             onUnauthorized={handleUnauthorized}
           />
         )}

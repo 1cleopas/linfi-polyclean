@@ -107,6 +107,22 @@ export function deleteAdminInvoice(id) {
   return request(`/api/admin/invoices/${id}`, { method: 'DELETE', auth: true })
 }
 
+export function listAdminExpenses() {
+  return request('/api/admin/expenses', { auth: true })
+}
+
+export function createAdminExpense(payload) {
+  return request('/api/admin/expenses', { method: 'POST', auth: true, body: payload })
+}
+
+export function updateAdminExpense(id, payload) {
+  return request(`/api/admin/expenses/${id}`, { method: 'PATCH', auth: true, body: payload })
+}
+
+export function deleteAdminExpense(id) {
+  return request(`/api/admin/expenses/${id}`, { method: 'DELETE', auth: true })
+}
+
 export function clearAdminData() {
   return request('/api/admin/data', { method: 'DELETE', auth: true, body: { confirm: 'CLEAR' } })
 }

@@ -7,6 +7,7 @@ import { countWeekBookings, createJob, createJobs, deleteJob, jobsFilePath, list
 import { initStorage, writeList } from './db.js'
 import { createWorker, deleteWorker, listWorkers, updateWorker, workersFilePath } from './workers.js'
 import { createInvoice, deleteInvoice, invoicesFilePath, listInvoices, updateInvoice } from './invoices.js'
+import { createExpense, deleteExpense, expensesFilePath, listExpenses, updateExpense } from './expenses.js'
 import { notificationStatus, notifyNewBooking } from './notify.js'
 import { clearLoginFailures, loginBlocked, recordLoginFailure } from './loginGuard.js'
 
@@ -424,7 +425,43 @@ app.delete('/api/admin/invoices/:id', requireAdmin, async (req, res) => {
   res.status(204).end()
 })
 
-// Wipes every job, worker and invoice. The dashboard asks the manager to type CLEAR first.
+app.get('/api/admin/expenses', requireAdmin, (_req, res) => {
+  res.json({ expenses: listExpenses() })
+})
+
+app.post('/api/admin/expenses', requireAdmin, async (req, res) => {
+  try {
+    const expense = await createExpense(req.body || {})
+    res.status(201).json({ expense })
+  } catch (error) {
+    if (error.code !== 'INVALID') throw error
+    res.status(400).json({ error: error.message })
+  }
+})
+
+app.patch('/api/admin/expenses/:id', requireAdmin, async (req, res) => {
+  try {
+    const expense = await updateExpense(req.params.id, req.body || {})
+    if (!expense) {
+      res.status(404).json({ error: 'Expense not found.' })
+      return
+    }
+    res.json({ expense })
+  } catch (error) {
+    if (error.code !== 'INVALID') throw error
+    res.status(400).json({ error: error.message })
+  }
+})
+
+app.delete('/api/admin/expenses/:id', requireAdmin, async (req, res) => {
+  if (!(await deleteExpense(req.params.id))) {
+    res.status(404).json({ error: 'Expense not found.' })
+    return
+  }
+  res.status(204).end()
+})
+
+// Wipes every job, worker, invoice and expense. The dashboard asks the manager to type CLEAR first.
 app.delete('/api/admin/data', requireAdmin, async (req, res) => {
   if (req.body?.confirm !== 'CLEAR') {
     res.status(400).json({ error: 'Type CLEAR to confirm.' })
@@ -433,6 +470,7 @@ app.delete('/api/admin/data', requireAdmin, async (req, res) => {
   await writeList('jobs', [])
   await writeList('workers', [])
   await writeList('invoices', [])
+  await writeList('expenses', [])
   res.status(204).end()
 })
 
@@ -462,5 +500,6 @@ app.listen(port, '0.0.0.0', () => {
   console.log(`Job file: ${jobsFilePath()}`)
   console.log(`Worker file: ${workersFilePath()}`)
   console.log(`Invoice file: ${invoicesFilePath()}`)
+  console.log(`Expense file: ${expensesFilePath()}`)
   console.log(`Booking notifications: ${notificationStatus()}`)
 })
