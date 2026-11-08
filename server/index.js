@@ -5,7 +5,7 @@ import { isIP } from 'node:net'
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import { join } from 'node:path'
 import { countWeekBookings, createJob, createJobs, deleteJob, jobsFilePath, listJobs, replaceAllJobs, updateJob } from './store.js'
-import { initStorage, writeList } from './db.js'
+import { initStorage, readList, writeList } from './db.js'
 import { createWorker, deleteWorker, listWorkers, updateWorker, workersFilePath } from './workers.js'
 import { createInvoice, deleteInvoice, invoicesFilePath, listInvoices, updateInvoice } from './invoices.js'
 import { createExpense, deleteExpense, expensesFilePath, listExpenses, updateExpense } from './expenses.js'
@@ -214,6 +214,35 @@ app.post('/api/bookings', async (req, res) => {
 })
 
 const formSecret = String(process.env.FORM_WEBHOOK_SECRET || '').trim()
+const backupSecret = String(process.env.BACKUP_SECRET || '').trim()
+
+// A full copy of the business data, fetched on a schedule by the Google Drive backup script
+// (integrations/google-drive-backup.gs). Protected by its own secret so the script never needs
+// the manager password.
+app.get('/api/backup', (req, res) => {
+  if (!backupSecret) {
+    res.status(503).json({ error: 'Backups are not set up on the server. Add BACKUP_SECRET in the hosting settings.' })
+    return
+  }
+  if (tooMany(`backup:${clientIp(req)}`, { max: 20, windowMs: 60 * 60 * 1000 })) {
+    res.status(429).json({ error: 'Too many backup requests. Try again later.' })
+    return
+  }
+  if (!passwordMatches(String(req.headers['x-backup-secret'] || ''), backupSecret)) {
+    console.warn(`Backup request with a wrong secret from ${clientIp(req)}`)
+    res.status(401).json({ error: 'Not allowed.' })
+    return
+  }
+  res.set('Cache-Control', 'no-store')
+  res.json({
+    createdAt: new Date().toISOString(),
+    jobs: readList('jobs'),
+    workers: readList('workers'),
+    invoices: readList('invoices'),
+    expenses: readList('expenses'),
+  })
+})
+
 
 // Bookings sent by the Google Form's script. Protected by a shared secret, and safe to retry:
 // a response that was already saved is recognised by its id and not saved again.
