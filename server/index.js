@@ -128,6 +128,8 @@ app.use((req, res, next) => {
   if (req.path.startsWith('/api/admin')) res.set('Cache-Control', 'no-store')
   next()
 })
+// A restore sends a whole backup file, so it gets a bigger limit — but only after the manager is signed in.
+app.use('/api/admin/restore', requireAdmin, express.json({ limit: '10mb' }))
 app.use(express.json({ limit: '200kb' }))
 app.use((error, _req, res, next) => {
   if (error instanceof SyntaxError) {
@@ -506,6 +508,40 @@ app.delete('/api/admin/data', requireAdmin, async (req, res) => {
   await writeList('invoices', [])
   await writeList('expenses', [])
   res.status(204).end()
+})
+
+// Puts back a backup file made by the Google Drive backup (or GET /api/backup). Replaces everything.
+const RESTORE_LISTS = ['jobs', 'workers', 'invoices', 'expenses']
+
+function isRecord(item) {
+  return Boolean(item) && typeof item === 'object' && !Array.isArray(item) && typeof item.id === 'string' && item.id.length > 0
+}
+
+app.post('/api/admin/restore', requireAdmin, async (req, res) => {
+  const { confirm, backup } = req.body || {}
+  if (confirm !== 'RESTORE') {
+    res.status(400).json({ error: 'Type RESTORE to confirm.' })
+    return
+  }
+  if (!backup || typeof backup !== 'object') {
+    res.status(400).json({ error: 'Choose a backup file first.' })
+    return
+  }
+  for (const name of RESTORE_LISTS) {
+    const list = backup[name]
+    if (!Array.isArray(list) || !list.every(isRecord)) {
+      res.status(400).json({ error: `This is not a LINFI backup file (the ${name} list is missing or damaged).` })
+      return
+    }
+    if (new Set(list.map((item) => item.id)).size !== list.length) {
+      res.status(400).json({ error: `This backup file has the same ${name} record twice.` })
+      return
+    }
+  }
+  for (const name of RESTORE_LISTS) await writeList(name, backup[name])
+  const counts = Object.fromEntries(RESTORE_LISTS.map((name) => [name, backup[name].length]))
+  console.log(`Restored backup from ${String(backup.createdAt || 'unknown date')}:`, counts)
+  res.json({ restored: counts })
 })
 
 app.use('/api', (_req, res) => {

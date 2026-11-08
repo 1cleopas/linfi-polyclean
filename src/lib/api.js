@@ -129,6 +129,10 @@ export function deleteAdminExpense(id) {
   return request(`/api/admin/expenses/${id}`, { method: 'DELETE', auth: true })
 }
 
+export function restoreAdminData(backup) {
+  return request('/api/admin/restore', { method: 'POST', auth: true, body: { confirm: 'RESTORE', backup } })
+}
+
 export function clearAdminData() {
   return request('/api/admin/data', { method: 'DELETE', auth: true, body: { confirm: 'CLEAR' } })
 }

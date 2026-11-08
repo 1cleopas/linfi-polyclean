@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { CalendarDays, CircleDollarSign, ClipboardList, Eye, EyeOff, FileText, LogOut, Plus, ReceiptText, Search, Trash2, Users, Wallet } from 'lucide-react'
+import { ArchiveRestore, CalendarDays, CircleDollarSign, ClipboardList, Eye, EyeOff, FileText, LogOut, Plus, ReceiptText, Search, Trash2, Users, Wallet } from 'lucide-react'
 import { services, tankSizes, tankTypes } from '../data/content'
 import { firstCleaningDate, nextCleaningDate, workWeeksForMonths } from '../lib/weeks'
 import { jobWorkDate } from '../lib/commission'
@@ -13,6 +13,7 @@ import {
   listAdminInvoices,
   listAdminJobs,
   listAdminWorkers,
+  restoreAdminData,
   setAdminToken,
   updateAdminJob,
   wakeAdminApi,
@@ -407,6 +408,53 @@ export default function Admin() {
     }
   }
 
+  async function restoreFromFile(e) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+
+    let backup
+    try {
+      backup = JSON.parse(await file.text())
+    } catch {
+      window.alert('That file could not be read. Choose a linfi-backup ….json file from the Google Drive backups folder.')
+      return
+    }
+    const lists = ['jobs', 'workers', 'invoices', 'expenses']
+    if (!backup || typeof backup !== 'object' || !lists.every((name) => Array.isArray(backup[name]))) {
+      window.alert('That is not a LINFI backup file. Choose a linfi-backup ….json file from the Google Drive backups folder.')
+      return
+    }
+
+    const made = backup.createdAt ? new Date(backup.createdAt) : null
+    const when = made && !Number.isNaN(made.getTime())
+      ? made.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })
+      : 'an unknown date'
+    const typed = window.prompt(
+      `This backup was made on ${when} and has ${backup.jobs.length} jobs, ${backup.workers.length} workers, ` +
+        `${backup.invoices.length} invoices and ${backup.expenses.length} expenses.\n\n` +
+        'Restoring replaces everything in the dashboard now with this backup. Anything added after the backup was made will be removed.\n\n' +
+        'Type RESTORE to continue.',
+    )
+    if (typed === null) return
+    if (typed.trim().toUpperCase() !== 'RESTORE') {
+      window.alert('Nothing was changed. Type RESTORE exactly to confirm.')
+      return
+    }
+
+    setError('')
+    try {
+      const data = await restoreAdminData(backup)
+      setSelected(null)
+      await refresh().catch(() => {})
+      const r = data.restored
+      window.alert(`Backup restored: ${r.jobs} jobs, ${r.workers} workers, ${r.invoices} invoices and ${r.expenses} expenses.`)
+    } catch (err) {
+      if (err.status === 401) handleUnauthorized()
+      window.alert(`Nothing was changed. ${err.message}`)
+    }
+  }
+
   if (!tokenReady) {
     return (
       <main className="admin-login">
@@ -481,6 +529,11 @@ export default function Admin() {
             <LogOut className="icon-sm" aria-hidden="true" />
             Sign out
           </button>
+          <label className="admin-side-link" style={{ cursor: 'pointer' }}>
+            <ArchiveRestore className="icon-sm" aria-hidden="true" />
+            Restore from backup
+            <input type="file" accept=".json,application/json" onChange={restoreFromFile} hidden />
+          </label>
           <button type="button" className="admin-side-link admin-side-danger" onClick={clearAllData}>
             <Trash2 className="icon-sm" aria-hidden="true" />
             Clear all data

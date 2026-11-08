@@ -29,4 +29,6 @@ The backup holds customer names, phone numbers and addresses, so keep the folder
 - Open **LINFI Polyclean backups** in Google Drive to see the daily files.
 - If a daily run fails, Google emails you about it.
 - To make an extra backup at any time, open the script, choose `backupNow` and press **Run**.
-- To restore after a loss, keep the newest good file and ask a developer to load it back.
+- To restore after a loss: download the newest good `linfi-backup ….json` file from the folder, open the
+  manager dashboard, click **Restore from backup** in the side menu, choose the file and type `RESTORE`.
+  This replaces everything in the dashboard with the backup, so anything added after it was made is removed.
