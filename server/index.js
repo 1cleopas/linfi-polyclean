@@ -1,6 +1,7 @@
 import { rootDir } from './loadEnv.js'
 import express from 'express'
 import { existsSync } from 'node:fs'
+import { isIP } from 'node:net'
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import { join } from 'node:path'
 import { countWeekBookings, createJob, createJobs, deleteJob, jobsFilePath, listJobs, replaceAllJobs, updateJob } from './store.js'
@@ -29,7 +30,11 @@ const SESSION_VERSION = 5
 const buckets = new Map()
 
 function clientIp(req) {
-  // With 'trust proxy' set to 1, req.ip is the address Render's proxy saw, which a visitor cannot fake.
+  // Render's own proxy is the last hop, so req.ip is an internal 10.x address shared by many visitors.
+  // Render sits behind Cloudflare, which sets CF-Connecting-IP to the real visitor and overwrites any
+  // value a visitor sends, so it is used first when it holds a valid address.
+  const forwarded = String(req.headers['cf-connecting-ip'] || '').trim()
+  if (onHost && isIP(forwarded)) return forwarded
   return req.ip || req.socket?.remoteAddress || 'unknown'
 }
 
@@ -155,7 +160,7 @@ app.post('/api/bookings', async (req, res) => {
   // Spam trap: people never see the "website" field, so anything in it came from a bot.
   // Answer as if it worked so the bot learns nothing, but save and send nothing.
   if (text(raw.website)) {
-    console.warn(`Booking spam trap triggered from ${clientIp(req)}`)
+    console.warn(`Booking spam trap triggered from ${clientIp(req)} (forwarded for: ${text(req.headers['x-forwarded-for'], 300) || 'none'})`)
     res.status(201).json({ job: null, jobs: [], weekCount: 0, confirmations: [] })
     return
   }
@@ -488,8 +493,12 @@ if (existsSync(indexFile)) {
 }
 
 app.use((error, _req, res, _next) => {
-  console.error(error)
   if (res.headersSent) return
+  if (error?.type === 'entity.too.large') {
+    res.status(413).json({ error: 'That is too much information to send at once.' })
+    return
+  }
+  console.error(error)
   res.status(500).json({ error: 'Something went wrong on the server. Please try again.' })
 })
 

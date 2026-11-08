@@ -84,7 +84,8 @@ export function ghanaPhone(value) {
 /** Only Ghana mobile numbers get customer SMS, so the form cannot run up costs on foreign numbers. */
 function ghanaMobile(value) {
   const digits = ghanaPhone(value)
-  return /^233[235]\d{8}$/.test(digits) ? digits : ''
+  // Mobile numbers start 02x or 05x; 03x numbers are landlines, which cannot receive SMS.
+  return /^233[25]\d{8}$/.test(digits) ? digits : ''
 }
 
 function validEmail(value) {

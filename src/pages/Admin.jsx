@@ -649,6 +649,7 @@ export default function Admin() {
                         {job.week ? (
                           <span className="field-hint" style={{ display: 'block' }}>
                             {weekCounts[job.week] || 0} booking{(weekCounts[job.week] || 0) === 1 ? '' : 's'}
+                            {job.time ? ` · ${job.time}` : ''}
                           </span>
                         ) : null}
                       </td>
@@ -702,6 +703,7 @@ export default function Admin() {
             <div className="modal-grid">
               <Field label="Name" value={adding ? draft.fullName : selected.fullName} onChange={(value) => (adding ? setDraft({ ...draft, fullName: value }) : setSelected({ ...selected, fullName: value }))} />
               <Field label="Phone" value={adding ? draft.phone : selected.phone} onChange={(value) => (adding ? setDraft({ ...draft, phone: value }) : setSelected({ ...selected, phone: value }))} />
+              <Field label="WhatsApp" value={adding ? draft.whatsapp : selected.whatsapp || ''} onChange={(value) => (adding ? setDraft({ ...draft, whatsapp: value }) : setSelected({ ...selected, whatsapp: value }))} />
               <Field label="Email" type="email" value={adding ? draft.email : selected.email || ''} onChange={(value) => (adding ? setDraft({ ...draft, email: value }) : setSelected({ ...selected, email: value }))} />
               <Field label="Location" value={adding ? draft.location : selected.location} onChange={(value) => (adding ? setDraft({ ...draft, location: value }) : setSelected({ ...selected, location: value }))} />
               <Field label="GPS address" value={adding ? draft.gpsAddress : selected.gpsAddress || ''} onChange={(value) => (adding ? setDraft({ ...draft, gpsAddress: value }) : setSelected({ ...selected, gpsAddress: value }))} />
@@ -730,6 +732,7 @@ export default function Admin() {
                   <span className="field-hint">Next cleaning date: {formatNextCleaning(adding ? draft.week : selected.week)}</span>
                 )}
               </label>
+              <Field label="Preferred time" value={adding ? draft.time : selected.time || ''} onChange={(value) => (adding ? setDraft({ ...draft, time: value }) : setSelected({ ...selected, time: value }))} />
               <label className="field">
                 Service
                 <select
@@ -837,6 +840,16 @@ export default function Admin() {
                 value={adding ? draft.notes : selected.notes}
                 onChange={(value) => (adding ? setDraft({ ...draft, notes: value }) : setSelected({ ...selected, notes: value }))}
               />
+              <label className="field" style={{ gridColumn: '1 / -1' }}>
+                Customer's message
+                <textarea
+                  className="textarea"
+                  rows={3}
+                  value={(adding ? draft.extra : selected.extra) || ''}
+                  onChange={(e) => (adding ? setDraft({ ...draft, extra: e.target.value }) : setSelected({ ...selected, extra: e.target.value }))}
+                />
+                <span className="field-hint">What the customer wrote when booking. Your own notes go in Notes.</span>
+              </label>
             </div>
             {error && <p className="field-error" style={{ marginTop: '1rem' }}>{error}</p>}
             <div className="admin-actions" style={{ marginTop: '1.5rem', flexWrap: 'wrap' }}>

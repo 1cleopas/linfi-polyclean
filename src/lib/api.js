@@ -16,12 +16,18 @@ async function request(path, { method = 'GET', body, auth = false } = {}) {
     if (token) headers.Authorization = `Bearer ${token}`
   }
 
+  // A server that is waking up can take up to a minute, so wait that long before giving up.
   const response = await fetch(path, {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
-  }).catch(() => {
-    const error = new Error('Could not reach the server. Check your connection and try again.')
+    signal: AbortSignal.timeout(75000),
+  }).catch((err) => {
+    const error = new Error(
+      err?.name === 'TimeoutError'
+        ? 'The server is taking too long to answer. Please try again in a minute.'
+        : 'Could not reach the server. Check your connection and try again.',
+    )
     error.status = 0
     throw error
   })
